@@ -6,8 +6,37 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		E0C397BB2D26F99700824AF0 /* OpenID-watch Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = E0C397AE2D26F99200824AF0 /* OpenID-watch Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		E0C397B92D26F99700824AF0 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E0B380982D2636D100F7A34E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E0C397AD2D26F99200824AF0;
+			remoteInfo = "OpenID-watch Watch App";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		E0C397BC2D26F99700824AF0 /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				E0C397BB2D26F99700824AF0 /* OpenID-watch Watch App.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		E0B380A02D2636D100F7A34E /* OpenID.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OpenID.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E0C397AE2D26F99200824AF0 /* OpenID-watch Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "OpenID-watch Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -18,6 +47,32 @@
 			);
 			target = E0B3809F2D2636D100F7A34E /* OpenID */;
 		};
+		E0C397C12D26F9E800824AF0 /* Exceptions for "OpenID" folder in "OpenID-watch Watch App" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Assets.xcassets,
+				ContentView.swift,
+				Core/MyProfileView.swift,
+				Core/ProfileView.swift,
+				"Extensions/Extension+Color.swift",
+				icons.json,
+				Model/User.swift,
+				"Resources/Font Awesome/FAIcon.swift",
+				"Resources/Font Awesome/FAText.swift",
+				"Resources/Font Awesome/FontAwesome.swift",
+				"Resources/Fonts/Font Awesome 6 Brands-Regular-400.otf",
+				"Resources/Fonts/Font Awesome 6 Duotone-Solid-900.otf",
+				"Resources/Fonts/Font Awesome 6 Pro-Light-300.otf",
+				"Resources/Fonts/Font Awesome 6 Pro-Regular-400.otf",
+				"Resources/Fonts/Font Awesome 6 Pro-Solid-900.otf",
+				"Resources/Fonts/Font Awesome 6 Pro-Thin-100.otf",
+				"Resources/Fonts/Font Awesome 6 Sharp-Light-300.otf",
+				"Resources/Fonts/Font Awesome 6 Sharp-Regular-400.otf",
+				"Resources/Fonts/Font Awesome 6 Sharp-Solid-900.otf",
+				"Resources/Fonts/Font Awesome 6 Sharp-Thin-100.otf",
+			);
+			target = E0C397AD2D26F99200824AF0 /* OpenID-watch Watch App */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -25,14 +80,27 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				E0B381222D26564700F7A34E /* Exceptions for "OpenID" folder in "OpenID" target */,
+				E0C397C12D26F9E800824AF0 /* Exceptions for "OpenID" folder in "OpenID-watch Watch App" target */,
 			);
 			path = OpenID;
+			sourceTree = "<group>";
+		};
+		E0C397AF2D26F99200824AF0 /* OpenID-watch Watch App */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "OpenID-watch Watch App";
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		E0B3809D2D2636D100F7A34E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E0C397AB2D26F99200824AF0 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -46,6 +114,7 @@
 			isa = PBXGroup;
 			children = (
 				E0B380A22D2636D100F7A34E /* OpenID */,
+				E0C397AF2D26F99200824AF0 /* OpenID-watch Watch App */,
 				E0B380A12D2636D100F7A34E /* Products */,
 			);
 			sourceTree = "<group>";
@@ -54,6 +123,7 @@
 			isa = PBXGroup;
 			children = (
 				E0B380A02D2636D100F7A34E /* OpenID.app */,
+				E0C397AE2D26F99200824AF0 /* OpenID-watch Watch App.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -68,10 +138,12 @@
 				E0B3809C2D2636D100F7A34E /* Sources */,
 				E0B3809D2D2636D100F7A34E /* Frameworks */,
 				E0B3809E2D2636D100F7A34E /* Resources */,
+				E0C397BC2D26F99700824AF0 /* Embed Watch Content */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				E0C397BA2D26F99700824AF0 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				E0B380A22D2636D100F7A34E /* OpenID */,
@@ -81,6 +153,28 @@
 			);
 			productName = OpenID;
 			productReference = E0B380A02D2636D100F7A34E /* OpenID.app */;
+			productType = "com.apple.product-type.application";
+		};
+		E0C397AD2D26F99200824AF0 /* OpenID-watch Watch App */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E0C397BF2D26F99700824AF0 /* Build configuration list for PBXNativeTarget "OpenID-watch Watch App" */;
+			buildPhases = (
+				E0C397AA2D26F99200824AF0 /* Sources */,
+				E0C397AB2D26F99200824AF0 /* Frameworks */,
+				E0C397AC2D26F99200824AF0 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				E0C397AF2D26F99200824AF0 /* OpenID-watch Watch App */,
+			);
+			name = "OpenID-watch Watch App";
+			packageProductDependencies = (
+			);
+			productName = "OpenID-watch Watch App";
+			productReference = E0C397AE2D26F99200824AF0 /* OpenID-watch Watch App.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -94,6 +188,9 @@
 				LastUpgradeCheck = 1610;
 				TargetAttributes = {
 					E0B3809F2D2636D100F7A34E = {
+						CreatedOnToolsVersion = 16.1;
+					};
+					E0C397AD2D26F99200824AF0 = {
 						CreatedOnToolsVersion = 16.1;
 					};
 				};
@@ -113,12 +210,20 @@
 			projectRoot = "";
 			targets = (
 				E0B3809F2D2636D100F7A34E /* OpenID */,
+				E0C397AD2D26F99200824AF0 /* OpenID-watch Watch App */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		E0B3809E2D2636D100F7A34E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E0C397AC2D26F99200824AF0 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -135,7 +240,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E0C397AA2D26F99200824AF0 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		E0C397BA2D26F99700824AF0 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E0C397AD2D26F99200824AF0 /* OpenID-watch Watch App */;
+			targetProxy = E0C397B92D26F99700824AF0 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		E0B380AD2D2636D500F7A34E /* Debug */ = {
@@ -334,6 +454,69 @@
 			};
 			name = Release;
 		};
+		E0C397BD2D26F99700824AF0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"OpenID-watch Watch App/Preview Content\"";
+				DEVELOPMENT_TEAM = Y22PRZL3N4;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "OpenID-watch-Watch-App-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = OpenID;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.liamwilley.OpenID;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.liamwilley.OpenID.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10;
+			};
+			name = Debug;
+		};
+		E0C397BE2D26F99700824AF0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"OpenID-watch Watch App/Preview Content\"";
+				DEVELOPMENT_TEAM = Y22PRZL3N4;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "OpenID-watch-Watch-App-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = OpenID;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.liamwilley.OpenID;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.liamwilley.OpenID.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				VALIDATE_PRODUCT = YES;
+				WATCHOS_DEPLOYMENT_TARGET = 10;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -351,6 +534,15 @@
 			buildConfigurations = (
 				E0B380B02D2636D500F7A34E /* Debug */,
 				E0B380B12D2636D500F7A34E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E0C397BF2D26F99700824AF0 /* Build configuration list for PBXNativeTarget "OpenID-watch Watch App" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E0C397BD2D26F99700824AF0 /* Debug */,
+				E0C397BE2D26F99700824AF0 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

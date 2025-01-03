@@ -9,7 +9,6 @@ import SwiftUI
 
 struct ProfileView: View {
     @State private var showPronunciation = false
-//    @State private var showFullBio = false
     
     let user: User
     let shared: Bool
@@ -21,10 +20,9 @@ struct ProfileView: View {
             .foregroundStyle(Color.gray.opacity(pulse ? 0.6 : 0.2))
             .frame(width: width)
             .onAppear {
-                withAnimation(.smooth.repeatForever()) {
-                    pulse.toggle() // There's a better way to do this using only one-line modifiers
-                }
+                pulse.toggle()
             }
+            .animation(.smooth.repeatForever(), value: pulse)
     }
     
     init(_ user: User, shared: Bool) {
@@ -37,15 +35,17 @@ struct ProfileView: View {
             ScrollView {
                 VStack(spacing: 30) {
                     VStack(spacing: 22) {
-                        Text("Shared to You")
-                            .padding(9)
-                            .padding(.horizontal, 3)
-                            .font(.system(size: 14).weight(.medium))
-                            .foregroundStyle(Color.primary.opacity(0.85))
-                            .background(Material.regular)
-                            .clipShape(Capsule())
+                        if shared {
+                            Text("Shared to You")
+                                .padding(9)
+                                .padding(.horizontal, 3)
+                                .font(.system(size: 14).weight(.medium))
+                                .foregroundStyle(Color.primary.opacity(0.85))
+                                .background(Color.backgroundGray)
+                                .clipShape(Capsule())
+                        }
                         if let avatarURL = user.avatarURL, let url = URL(string: avatarURL) {
-                            // AsyncImage or should we use Kingfisher?
+                            // Does AsyncImage work well or should we use Kingfisher?
                             AsyncImage(url: url) { image in
                                 image
                                     .resizable()
@@ -56,7 +56,8 @@ struct ProfileView: View {
                                 placeholderAvatar(width: geo.size.width / 2.8)
                             }
                         } else {
-                            Image(.avatar) // Replace with placeholder background
+                            // Right now, this avatar image is a placeholder for testing
+                            Image(.avatar)
                                 .resizable()
                                 .aspectRatio(contentMode: .fit) // Preserve aspect ratio
                                 .frame(width: geo.size.width / 2.8)
@@ -64,24 +65,30 @@ struct ProfileView: View {
                         }
                         VStack(spacing: 5) {
                             HStack(spacing: 12) {
-                                Text(user.fullname)
-                                    .font(.system(size: 28, design: .monospaced).weight(.bold))
+                                Text(user.firstname + " " + user.lastname)
+                                    .font(.system(size: {
+                                        #if os(watchOS)
+                                        return 24
+                                        #else
+                                        return 27
+                                        #endif
+                                    }(), design: .monospaced).weight(.heavy))
+                                #if os(iOS)
                                 if let pronunciation = user.pronunciation {
-                                    Menu {
-                                        // Temporary substitute for popover
-                                        Text(pronunciation)
-                                        
-                                        // self.showPronunciation = true
+                                    Button {
+                                         self.showPronunciation = true
                                     } label: {
                                         Image(systemName: "person.wave.2.fill")
                                             .font(.system(size: 24))
                                     }
-                                    /*
-                                    .popover(isPresented: $showPronunciation, attachmentAnchor: .point(.top)) {
-                                        Text(pronunciation)
+                                    .popover(isPresented: $showPronunciation, attachmentAnchor: .point(.bottom)) {
+                                        VStack {
+                                            Text(pronunciation)
+                                        }
+                                        .presentationCompactAdaptation(.popover)
                                     }
-                                     */
                                 }
+                                #endif
                             }
                             Text({
                                 var result = ""
@@ -95,10 +102,11 @@ struct ProfileView: View {
                                 
                                 return result
                             }())
-                                .font(.system(size: 20))
+                            .font(.system(size: 20.5))
                                 .foregroundStyle(.gray)
                         }
                     }
+                    #if os(iOS)
                     HStack(spacing: 12) {
                         if let phoneNumbers = user.phoneNumbers, !phoneNumbers.isEmpty {
                             let label = FAText(iconName: "phone", size: 23)
@@ -112,11 +120,7 @@ struct ProfileView: View {
                                     ContactRowView(label)
                                 }
                             } else if let phoneNumber = phoneNumbers.first {
-                                Button {
-                                    print(phoneNumber) // Call or copy phone number
-                                } label: {
-                                    ContactRowView(label)
-                                }
+                                ContactActionButton(phoneNumber, type: .phoneNumber)
                             }
                         }
                         if let emails = user.emails, !emails.isEmpty {
@@ -131,52 +135,54 @@ struct ProfileView: View {
                                     ContactRowView(label)
                                 }
                             } else if let email = emails.first {
-                                Button {
-                                    print(email) // Open in client or copy email address
-                                } label: {
-                                    ContactRowView(label)
-                                }
+                                ContactActionButton(email, type: .email)
                             }
                         }
                         if !shared {
                             Button {
-                                
+                                // TODO: add share backend
                             } label: {
                                 ContactRowView(FAText(iconName: "share", size: 23))
                             }
+                            .buttonStyle(.plain)
                         }
                     }
+                    #endif
                     VStack(spacing: 15) {
                         if let bio = user.bio {
-                            ZStack(alignment: .bottom) {
-                                Text(bio)
-                                    .padding(15)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .background(Material.thin)
-                                    .clipShape(RoundedRectangle(cornerRadius: 20))
-//                                    .lineLimit(showFullBio ? nil : 4)
-                                // We need a way to conditionally show the button, in case the bio is not long enough to truncate
-//                                if !showFullBio {
-//                                    Button {
-//                                        showFullBio = true
-//                                    } label: {
-//                                        HStack(spacing: 6) {
-//                                            Image(systemName: "chevron.down")
-//                                            Text("Show More")
-//                                        }
-//                                        .font(.body.weight(.bold))
-//                                        .padding(6)
-//                                        .padding(.horizontal, 3)
-//                                        .overlay {
-//                                            RoundedRectangle(cornerRadius: 12)
-//                                                .stroke(Color.accentColor, lineWidth: 3)
-//                                        }
-//                                    }
-//                                    .offset(y: 43)
-//                                }
-                            }
-//                            .padding(.bottom, showFullBio ? 0 : 52)
+                            Text(bio)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding()
+                                .background(Color.materialGray)
+                                .clipShape(RoundedRectangle(cornerRadius: 20))
                         }
+                        VStack(spacing: 0) {
+                            Button {
+                                
+                            } label: {
+                                HStack(spacing: 10) {
+                                    RoundedRectangle(cornerRadius: 15)
+                                        .frame(width: 35, height: 35)
+                                    Text("GitHub")
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                            .buttonStyle(ListButtonStyle())
+                            Divider()
+                            Button {
+                                
+                            } label: {
+                                HStack(spacing: 10) {
+                                    RoundedRectangle(cornerRadius: 15)
+                                        .frame(width: 35, height: 35)
+                                    Text("Stack Overflow")
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                            .buttonStyle(ListButtonStyle())
+                        }
+                        .background(Color.backgroundGray)
+                        .clipShape(RoundedRectangle(cornerRadius: 20))
                     }
                 }
                 .padding()
@@ -186,14 +192,32 @@ struct ProfileView: View {
     }
 }
 
+struct ListButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .buttonStyle(.plain)
+            .padding()
+            .foregroundStyle(Color.primary)
+            .background(configuration.isPressed ? Color.backgroundLightGray : Color.backgroundGray)
+    }
+}
+
 struct ContactActionButton: View {
     enum `Type` {
         case email
         case phoneNumber
     }
     
+    @Environment(\.openURL) var openURL
+    
     let string: String
     let type: `Type`
+    
+    func executeSocial() {
+        if let url = URL(string: "\(type == .email ? "mailto" : "tel")://\(type == .email ? string : string.replacingOccurrences(of: " ", with: ""))") {
+            openURL(url)
+        }
+    }
     
     init(_ string: String, type: `Type`) {
         self.string = string
@@ -201,22 +225,28 @@ struct ContactActionButton: View {
     }
     
     var body: some View {
+        let executeButton = Button {
+            executeSocial()
+        } label: {
+            if type == .email {
+                Label("Send Email", systemImage: "envelope")
+            } else {
+                Label("Call", systemImage: "phone")
+            }
+        }.buttonStyle(.plain)
+        
+        #if os(iOS)
         Menu(string) {
             Button {
                 UIPasteboard.general.string = string
             } label: {
                 Label("Copy", systemImage: "doc.on.clipboard")
             }
-            Button {
-                // Execute appropriate action
-            } label: {
-                if type == .email {
-                    Label("Send Email", systemImage: "envelope")
-                } else {
-                    Label("Call", systemImage: "phone")
-                }
-            }
+            executeButton
         }
+        #elseif os(watchOS)
+        executeButton
+        #endif
     }
 }
 
@@ -230,8 +260,8 @@ struct ContactRowView: View {
     var body: some View {
         icon
             .frame(width: 48, height: 48)
-            .background(Color.accentColor)
-            .foregroundStyle(.white)
+            .background(Color.blue)
+            .foregroundStyle(Color.white)
             .clipShape(RoundedRectangle(cornerRadius: 14))
     }
 }
