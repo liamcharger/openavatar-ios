@@ -8,10 +8,17 @@
 import SwiftUI
 
 struct ContentView: View {
+    @EnvironmentObject var authViewModel: AuthViewModel
+    
     var body: some View {
         NavigationView {
-            // TODO: add onboarding
-            MyProfileView()
+            if authViewModel.isLoading {
+                ProgressView()
+            } else if authViewModel.userSession == nil {
+                OnboardingView()
+            } else {
+                MyProfileView()
+            }
         }
         .navigationViewStyle(.stack)
     }

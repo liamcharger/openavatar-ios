@@ -66,14 +66,7 @@ struct ProfileView: View {
                         VStack(spacing: 5) {
                             HStack(spacing: 12) {
                                 Text(user.firstname + " " + user.lastname)
-                                    .font(.system(size: {
-                                        #if os(watchOS)
-                                        return 24
-                                        #else
-                                        return 27
-                                        #endif
-                                    }(), design: .monospaced).weight(.heavy))
-                                #if os(iOS)
+                                    .font(.system(size: 27, design: .monospaced).weight(.heavy))
                                 if let pronunciation = user.pronunciation {
                                     Button {
                                          self.showPronunciation = true
@@ -88,7 +81,6 @@ struct ProfileView: View {
                                         .presentationCompactAdaptation(.popover)
                                     }
                                 }
-                                #endif
                             }
                             Text({
                                 var result = ""
@@ -106,7 +98,6 @@ struct ProfileView: View {
                                 .foregroundStyle(.gray)
                         }
                     }
-                    #if os(iOS)
                     HStack(spacing: 12) {
                         if let phoneNumbers = user.phoneNumbers, !phoneNumbers.isEmpty {
                             let label = FAText(iconName: "phone", size: 23)
@@ -147,7 +138,6 @@ struct ProfileView: View {
                             .buttonStyle(.plain)
                         }
                     }
-                    #endif
                     VStack(spacing: 15) {
                         if let bio = user.bio {
                             Text(bio)
@@ -225,28 +215,22 @@ struct ContactActionButton: View {
     }
     
     var body: some View {
-        let executeButton = Button {
-            executeSocial()
-        } label: {
-            if type == .email {
-                Label("Send Email", systemImage: "envelope")
-            } else {
-                Label("Call", systemImage: "phone")
-            }
-        }.buttonStyle(.plain)
-        
-        #if os(iOS)
         Menu(string) {
             Button {
                 UIPasteboard.general.string = string
             } label: {
                 Label("Copy", systemImage: "doc.on.clipboard")
             }
-            executeButton
+            Button {
+                executeSocial()
+            } label: {
+                if type == .email {
+                    Label("Send Email", systemImage: "envelope")
+                } else {
+                    Label("Call", systemImage: "phone")
+                }
+            }
         }
-        #elseif os(watchOS)
-        executeButton
-        #endif
     }
 }
 
