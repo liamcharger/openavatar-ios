@@ -24,6 +24,5 @@ struct CustomTextField: View {
             .background(Color.backgroundGray)
             .clipShape(RoundedRectangle(cornerRadius: 10))
             .autocorrectionDisabled()
-            .autocapitalization(.none)
     }
 }

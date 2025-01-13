@@ -7,12 +7,21 @@
 
 import SwiftUI
 
-enum ProfileElement: Int {
+enum ProfileElement {
     case name
+    case bio
+    case emails
+    case phoneNumbers
+    case links
+    case pronunciation
 }
 
 struct ProfileView: View {
+    @ObservedObject var userViewModel = UserViewModel.shared
+    
     @State private var showPronunciation = false
+    @State private var profileImage: UIImage?
+    @State private var showProfileImagePicker = false
     
     let user: User
     
@@ -42,16 +51,46 @@ struct ProfileView: View {
         return Circle()
             .foregroundStyle(Color.gray.opacity(pulse ? 0.8 : 0.2))
             .animation(.smooth(duration: 1).repeatForever(autoreverses: true), value: pulse)
+            .frame(width: width, height: width)
     }
-    func addElement(for element: ProfileElement, completion: @escaping() -> Void) -> some View {
-        Button {
-            completion()
-        } label: {
-            HStack {
-                
+    func elementPrompt(for element: ProfileElement) -> some View {
+        Group {
+            // We don't want to show any prompts if the profile has been shared
+            if !isShared() {
+                switch element {
+                case .name:
+                    EmptyView()
+                case .bio, .links:
+                    let isBio = (element == .bio)
+                    
+                    Button {
+                        if isBio {
+                            // TODO: add a bio
+                        } else {
+                            // TODO: add social links
+                        }
+                    } label: {
+                        HStack(spacing: 10) {
+                            Image(systemName: "plus")
+                                .font(.body.weight(.medium))
+                                .padding(10)
+                                .background(Color.blue.opacity(0.3))
+                                .clipShape(Circle())
+                            Text("Add \(isBio ? "a bio" : "social links")")
+                            Spacer()
+                        }
+                    }
+                    .buttonStyle(ListButtonStyle())
+                    .clipShape(RoundedRectangle(cornerRadius: 20))
+                case .emails:
+                    EmptyView()
+                case .phoneNumbers:
+                    EmptyView()
+                case .pronunciation:
+                    EmptyView()
+                }
             }
         }
-        .buttonStyle(ListButtonStyle())
     }
     
     init(_ user: User) {
@@ -62,43 +101,65 @@ struct ProfileView: View {
         GeometryReader { geo in
             ScrollView {
                 VStack(spacing: 30) {
-                    VStack(spacing: 22) {
-                        if isShared() {
-                            Text("Shared to You")
-                                .padding(9)
-                                .padding(.horizontal, 3)
-                                .font(.system(size: 14).weight(.medium))
-                                .background {
-                                    Capsule()
-                                        .stroke(Color.primary, lineWidth: 2)
-                                }
-                        }
+                    if isShared() {
+                        Text("Shared to You")
+                            .padding(9)
+                            .padding(.horizontal, 3)
+                            .font(.system(size: 14).weight(.medium))
+                            .background {
+                                Capsule()
+                                    .stroke(Color.primary, lineWidth: 2)
+                            }
+                    }
+                    VStack(spacing: 5) {
                         let size = min(200, geo.size.width / 2.8)
-                        if let avatarURL = user.avatarURL, let url = URL(string: avatarURL) {
+                        if let avatarURL = user.avatarURL, let url = URL(
+                            string: avatarURL
+                        ) {
                             // Does AsyncImage work well or should we use Kingfisher?
                             AsyncImage(url: url) { image in
                                 image
                                     .resizable()
-                                    .aspectRatio(contentMode: .fit) // Preserve aspect ratio
+                                    .aspectRatio(
+                                        contentMode: .fill
+                                    ) // Preserve aspect ratio
                                     .frame(width: size)
                                     .clipShape(Circle())
                             } placeholder: {
                                 placeholderAvatar(width: size)
+                                    .overlay {
+                                        ProgressView()
+                                    }
                             }
                         } else {
                             Button {
-                                // TODO: add image and upload to cloud
+                                showProfileImagePicker = true
                             } label: {
                                 placeholderAvatar(width: size, animate: false)
                                     .overlay {
-                                        VStack(spacing: 9) {
-                                            FAText(iconName: "camera", size: 28)
-                                            Text("Add Photo")
-                                                .font(.system(size: 19).weight(.medium))
+                                        if !isShared() { // Should we show a blank circle, or remove it altogether?
+                                            VStack(spacing: 9) {
+                                                FAText(iconName: "camera", size: 28)
+                                                Text("Add Photo")
+                                                    .font(
+                                                        .system(size: 18)
+                                                        .weight(.medium)
+                                                    )
+                                            }
+                                        } else if userViewModel.isLoadingProfilePicture {
+                                            ProgressView()
                                         }
                                     }
                             }
+                            .disabled(isShared())
                             .frame(width: size, height: size)
+                            .sheet(isPresented: $showProfileImagePicker, onDismiss: {
+                                if let profileImage {
+                                    userViewModel.uploadProfileImage(image: profileImage)
+                                }
+                            }) {
+                                ImagePicker(selectedImage: $profileImage)
+                            }
                         }
                         VStack(spacing: 5) {
                             HStack(spacing: 12) {
@@ -109,10 +170,13 @@ struct ProfileView: View {
                                         return user.nickname
                                     }
                                 }())
-                                    .font(.system(size: 28, design: .monospaced).weight(.bold))
+                                .font(
+                                    .system(size: 28, design: .monospaced)
+                                    .weight(.bold)
+                                )
                                 if let pronunciation = user.pronunciation {
                                     Button {
-                                         self.showPronunciation = true
+                                        self.showPronunciation = true
                                     } label: {
                                         Image(systemName: "person.wave.2.fill")
                                             .font(.system(size: 24))
@@ -139,14 +203,23 @@ struct ProfileView: View {
                             
                             if phoneNumbers.count > 1 {
                                 Menu {
-                                    ForEach(phoneNumbers, id: \.self) { phoneNumber in
-                                        ContactActionButton(phoneNumber, type: .phoneNumber)
+                                    ForEach(
+                                        phoneNumbers,
+                                        id: \.self
+                                    ) { phoneNumber in
+                                        ContactActionButton(
+                                            phoneNumber,
+                                            type: .phoneNumber
+                                        )
                                     }
                                 } label: {
                                     ContactRowView(label)
                                 }
                             } else if let phoneNumber = phoneNumbers.first {
-                                ContactActionButton(phoneNumber, type: .phoneNumber)
+                                ContactActionButton(
+                                    phoneNumber,
+                                    type: .phoneNumber
+                                )
                             }
                         }
                         if let emails = user.emails, !emails.isEmpty {
@@ -166,7 +239,9 @@ struct ProfileView: View {
                         }
                         if let url = URL(string: "https://openavatar.web.app/profile/\(user.uid)"), !isShared() {
                             ShareLink(item: url) {
-                                ContactRowView(FAText(iconName: "share", size: 23))
+                                ContactRowView(
+                                    FAText(iconName: "share", size: 23)
+                                )
                             }
                         }
                     }
@@ -177,33 +252,34 @@ struct ProfileView: View {
                                 .padding()
                                 .background(Color.materialGray)
                                 .clipShape(RoundedRectangle(cornerRadius: 20))
+                        } else {
+                            elementPrompt(for: .bio)
                         }
-                        VStack(spacing: 0) {
-                            Button {
-                                
-                            } label: {
-                                HStack(spacing: 10) {
-                                    RoundedRectangle(cornerRadius: 15)
-                                        .frame(width: 35, height: 35)
-                                    Text("GitHub")
+                        if let links = user.socialAccounts {
+                            VStack(spacing: 0) {
+                                ForEach(links.indices, id: \.self) { index in
+                                    let link = links[index]
+                                    
+                                    Button {
+                                        print(link)
+                                    } label: {
+                                        HStack(spacing: 10) {
+                                            RoundedRectangle(cornerRadius: 15)
+                                                .frame(width: 35, height: 35)
+                                            Text("GitHub")
+                                        }
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                    }
+                                    .buttonStyle(ListButtonStyle())
+                                    if index < links.count {
+                                        Divider()
+                                    }
                                 }
-                                .frame(maxWidth: .infinity, alignment: .leading)
                             }
-                            .buttonStyle(ListButtonStyle())
-                            Divider()
-                            Button {
-                                
-                            } label: {
-                                HStack(spacing: 10) {
-                                    RoundedRectangle(cornerRadius: 15)
-                                        .frame(width: 35, height: 35)
-                                    Text("Stack Overflow")
-                                }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                            }
-                            .buttonStyle(ListButtonStyle())
+                            .clipShape(RoundedRectangle(cornerRadius: 20))
+                        } else {
+                            elementPrompt(for: .links)
                         }
-                        .clipShape(RoundedRectangle(cornerRadius: 20))
                     }
                 }
                 .padding()

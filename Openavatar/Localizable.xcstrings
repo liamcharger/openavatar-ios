@@ -1,6 +1,12 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "%@" : {
+
+    },
+    "Add %@" : {
+
+    },
     "Add a bio?" : {
 
     },
@@ -19,6 +25,9 @@
     "Copy" : {
 
     },
+    "Create a strong password." : {
+
+    },
     "Create my account!" : {
 
     },
@@ -31,22 +40,22 @@
     "First, pick a nickname." : {
 
     },
-    "Get Started" : {
-
-    },
     "Getting things ready..." : {
 
     },
     "GitHub" : {
 
     },
-    "I don't want to enter my name" : {
+    "I have an account" : {
 
     },
     "I'll add one later" : {
 
     },
     "I'm done with my bio!" : {
+
+    },
+    "I've entered my credentials!" : {
 
     },
     "I've entered my password!" : {
@@ -70,9 +79,6 @@
     "My username is ready!" : {
 
     },
-    "Next, create a strong password for your account." : {
-
-    },
     "Nickname" : {
 
     },
@@ -91,9 +97,6 @@
     "Shared to You" : {
 
     },
-    "Stack Overflow" : {
-
-    },
     "Talking to servers..." : {
 
     },
@@ -103,16 +106,19 @@
     "The passwords do not match." : {
 
     },
-    "There was an error processing your request." : {
+    "This email won't be publicly displayed." : {
 
     },
-    "This email won't be publicly displayed." : {
+    "This is my first time here" : {
 
     },
     "This password must be at least 6 digits long" : {
 
     },
     "Time to enter your email." : {
+
+    },
+    "Time to login!" : {
 
     },
     "Welcome to Openavatar!" : {

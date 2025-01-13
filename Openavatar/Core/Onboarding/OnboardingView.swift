@@ -9,6 +9,7 @@ import SwiftUI
 
 struct OnboardingView: View {
     enum ViewSelection: Int, CaseIterable {
+        case login
         case welcome
         case nickname
         case name
@@ -31,7 +32,9 @@ struct OnboardingView: View {
     @State private var firstName = ""
     @State private var lastName = ""
     @State private var email = ""
+    @State private var loginEmail = ""
     @State private var bio = ""
+    @State private var loginPassword = ""
     @State private var password = ""
     @State private var confirmPassword = ""
     
@@ -42,15 +45,36 @@ struct OnboardingView: View {
     
     @FocusState private var isNicknameFocused: Bool
     @FocusState private var isEmailFocused: Bool
-    @FocusState private var isPasswordFocused: Bool
     @FocusState private var isBioFocused: Bool
     
     private let animation = Animation.smooth(duration: 0.9)
     
+    private func isEmailValid(_ email: String) -> Bool {
+        let emailRegex = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"
+        let emailPredicate = NSPredicate(format: "SELF MATCHES %@", emailRegex)
+        
+        return emailPredicate.evaluate(with: email)
+    }
     private func wait(for interval: Double, completion: @escaping() -> Void) {
         DispatchQueue.main.asyncAfter(deadline: .now() + interval) {
             completion()
         }
+    }
+    private func backButton(backTo index: ViewSelection, ignoreReview: Bool = false) -> some View {
+        Button {
+            if ignoreReview {
+                isReviewing = false
+            }
+            
+            if isReviewing {
+                switchView()
+            } else {
+                switchView(to: index)
+            }
+        } label: {
+            Image(systemName: "arrow.left")
+        }
+        .buttonStyle(CustomButtonStyle(style: .compact))
     }
     private func nextButton(title: LocalizedStringKey, completion: (() -> Void)? = nil) -> some View {
         Button {
@@ -95,15 +119,13 @@ struct OnboardingView: View {
         .multilineTextAlignment(.center)
     }
     private func animateIn(subtitle: Bool = true) {
-        showSubtitle = false
-        
         wait(for: 0.8) {
             withAnimation(animation) {
                 showPage.toggle()
             }
             wait(for: 1) {
                 withAnimation(animation) {
-                    showSubtitle.toggle()
+                    showSubtitle = true
                     wait(for: 0.6) {
                         withAnimation(animation) {
                             showPrimaryButton.toggle()
@@ -115,16 +137,17 @@ struct OnboardingView: View {
             }
         }
     }
-    private func switchView(to index: Int? = nil) {
+    private func switchView(to index: ViewSelection? = nil) {
         guard currentView.rawValue <= ViewSelection.loading.rawValue else { return }
         
         withAnimation(animation) {
             showPage = false
             showPrimaryButton = false
+            showSubtitle = false
             
             wait(for: 0.8) {
                 if let index {
-                    currentView = ViewSelection(rawValue: index) ?? .welcome
+                    currentView = index
                 } else if isReviewing {
                     currentView = .review
                 } else {
@@ -139,7 +162,8 @@ struct OnboardingView: View {
     var body: some View {
         ZStack {
             switch currentView {
-            case .welcome: welcome
+            case .login: loginView
+            case .welcome: welcomeView
             case .nickname: nicknameView
             case .name: nameView
             case .email: emailView
@@ -149,9 +173,7 @@ struct OnboardingView: View {
             case .loading: LoadingView()
             }
         }
-        .alert(isPresented: $showError) {
-            Alert(title: Text(error!), dismissButton: .cancel())
-        }
+        .frame(maxHeight: .infinity)
         .padding()
         .opacity(showPage ? 1 : 0)
         .onAppear {
@@ -159,19 +181,65 @@ struct OnboardingView: View {
         }
     }
     
-    var welcome: some View {
+    var welcomeView: some View {
         VStack {
             Spacer()
                 .frame(maxHeight: 22)
             Spacer()
             header(icon: "hands-clapping", title: "Welcome to Openavatar!", subtitle: "The open-source alternative to Gravatar")
             Spacer()
-            nextButton(title: "Get Started")
-                .padding()
-                .offset(y: showPrimaryButton ? 0 : 15)
-                .opacity(showPrimaryButton ? 1 : 0)
+            VStack(spacing: 10) {
+                nextButton(title: "This is my first time here")
+                Button("I have an account") {
+                    switchView(to: .login)
+                }
+            }
+            .padding()
         }
         .scaleEffect(showPage ? 1 : 1.1)
+    }
+    
+    var loginView: some View {
+        var canSubmit: Bool {
+            return !loginPassword.trimmingCharacters(in: .whitespaces).isEmpty && loginPassword.count >= 6 && isEmailValid(loginEmail)
+        }
+        
+        return VStack(spacing: 20) {
+            header(icon: "key", title: "Time to login!", subtitle: "\(error ?? "")", accent: {
+                if showError {
+                    return .red
+                }
+                return .primary
+            }(), error: showError)
+            VStack {
+                CustomTextField("Email", text: $loginEmail)
+                    .focused($isEmailFocused)
+                CustomPasswordField("Password", text: $loginPassword)
+            }
+            .autocapitalization(.none)
+            HStack {
+                backButton(backTo: .welcome)
+                if canSubmit {
+                    nextButton(title: "I've entered my credentials!", completion: {
+                        authViewModel.login(email: loginEmail, password: loginPassword) { error in
+                            if let error {
+                                self.showError = true
+                                self.error = error.localizedDescription
+                            }
+                            switchView(to: .loading)
+                        }
+                    })
+                    .offset(y: canSubmit ? 0 : 15)
+                    .opacity(canSubmit ? 1 : 0)
+                    .animation(.smooth, value: loginEmail)
+                    .animation(.smooth, value: loginPassword)
+                }
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .onAppear {
+            isEmailFocused = true
+        }
     }
     
     var nicknameView: some View {
@@ -184,10 +252,17 @@ struct OnboardingView: View {
             // TODO: do not allow capitals or spaces
             CustomTextField("Nickname", text: $nickname)
                 .focused($isNicknameFocused)
-            nextButton(title: "My username is ready!")
-                .offset(y: canSubmit ? 0 : 15)
-                .opacity(canSubmit ? 1 : 0)
-                .animation(.smooth, value: nickname)
+                .autocapitalization(.none)
+            HStack {
+                backButton(backTo: .welcome)
+                if canSubmit {
+                    nextButton(title: "My username is ready!")
+                        .offset(y: canSubmit ? 0 : 15)
+                        .opacity(canSubmit ? 1 : 0)
+                        .animation(.smooth, value: nickname)
+                }
+            }
+            .frame(maxWidth: .infinity)
         }
         .onAppear {
             isNicknameFocused = true
@@ -212,31 +287,36 @@ struct OnboardingView: View {
                 CustomTextField("Last", text: $lastName)
             }
             .autocorrectionDisabled()
-            nextButton(title: firstNameEmpty && lastNameEmpty ? "I don't want to enter my name" : "Continue!")
-                .offset(y: canSubmit ? 0 : 15)
-                .opacity(canSubmit ? 1 : 0)
-                .animation(.smooth, value: firstName)
-                .animation(.smooth, value: lastName)
+            HStack {
+                backButton(backTo: .nickname)
+                if canSubmit {
+                    nextButton(title: firstNameEmpty && lastNameEmpty ? "I'll add one later" : "Continue!")
+                        .offset(y: canSubmit ? 0 : 15)
+                        .opacity(canSubmit ? 1 : 0)
+                        .animation(.smooth, value: firstName)
+                        .animation(.smooth, value: lastName)
+                }
+            }
+            .frame(maxWidth: .infinity)
         }
     }
     
     var emailView: some View {
-        var canSubmit: Bool {
-            let email = email.trimmingCharacters(in: .whitespaces)
-            let atComponents = email.components(separatedBy: "@")
-            let dotComponents = email.components(separatedBy: ".")
-            
-            return !email.trimmingCharacters(in: .whitespaces).isEmpty && email.contains("@") && email.contains(".") && atComponents.count == 2 && dotComponents.count == 2 && !dotComponents[1].isEmpty
-        }
-        
         return VStack(spacing: 20) {
-            header(icon: canSubmit ? "check" : "envelope", title: "Time to enter your email.", subtitle: "This email won't be publicly displayed.", accent: canSubmit ? .green : .primary)
+            header(icon: isEmailValid(email) ? "check" : "envelope", title: "Time to enter your email.", subtitle: "This email won't be publicly displayed.", accent: isEmailValid(email) ? .green : .primary)
             CustomTextField("Email", text: $email)
+                .autocapitalization(.none)
                 .focused($isEmailFocused)
-            nextButton(title: "My email is correct!")
-                .offset(y: canSubmit ? 0 : 15)
-                .opacity(canSubmit ? 1 : 0)
-                .animation(.smooth, value: email)
+            HStack {
+                backButton(backTo: .name)
+                if isEmailValid(email) {
+                    nextButton(title: "My email is correct!")
+                        .offset(y: isEmailValid(email) ? 0 : 15)
+                        .opacity(isEmailValid(email) ? 1 : 0)
+                        .animation(.smooth, value: isEmailValid(email))
+                }
+            }
+            .frame(maxWidth: .infinity)
         }
         .onAppear {
             isEmailFocused = true
@@ -255,7 +335,7 @@ struct OnboardingView: View {
         }
         
         return VStack(spacing: 20) {
-            header(icon: canSubmit && doPasswordsMatch ? "check" : "key", title: "Next, create a strong password for your account.", subtitle: doPasswordsMatch ? "This password must be at least 6 digits long" : "The passwords do not match.", accent: {
+            header(icon: canSubmit && doPasswordsMatch ? "check" : "key", title: "Create a strong password.", subtitle: doPasswordsMatch ? "This password must be at least 6 digits long" : "The passwords do not match.", accent: {
                 if password.isEmpty && confirmPassword.isEmpty {
                     return .primary
                 } else if canSubmit && doPasswordsMatch {
@@ -266,17 +346,22 @@ struct OnboardingView: View {
                     return .orange
                 }
             }(), error: !doPasswordsMatch)
-            CustomPasswordField("Password", text: $password)
-                .focused($isPasswordFocused)
-            CustomPasswordField("Confirm Password", text: $confirmPassword)
-            nextButton(title: "I've entered my password!")
-                .offset(y: canSubmit && doPasswordsMatch ? 0 : 15)
-                .opacity(canSubmit && doPasswordsMatch ? 1 : 0)
-                .animation(.smooth, value: password)
-                .animation(.smooth, value: confirmPassword)
-        }
-        .onAppear {
-            isPasswordFocused = true
+            VStack {
+                CustomPasswordField("Password", text: $password)
+                CustomPasswordField("Confirm Password", text: $confirmPassword)
+            }
+            .autocapitalization(.none)
+            HStack {
+                backButton(backTo: .email)
+                if canSubmit && doPasswordsMatch {
+                    nextButton(title: "I've entered my password!")
+                        .offset(y: canSubmit && doPasswordsMatch ? 0 : 15)
+                        .opacity(canSubmit && doPasswordsMatch ? 1 : 0)
+                        .animation(.smooth, value: password)
+                        .animation(.smooth, value: confirmPassword)
+                }
+            }
+            .frame(maxWidth: .infinity)
         }
     }
     
@@ -294,8 +379,12 @@ struct OnboardingView: View {
                         .stroke(Material.regular, lineWidth: 4)
                 }
                 .focused($isBioFocused)
-            nextButton(title: bioEmpty ? "I'll add one later" : "I'm done with my bio!")
-                .animation(.smooth, value: bio)
+            HStack {
+                backButton(backTo: .password)
+                nextButton(title: bioEmpty ? "I'll add one later" : "I'm done with my bio!")
+                    .animation(.smooth, value: bio)
+            }
+            .frame(maxWidth: .infinity)
         }
         .onAppear {
             isBioFocused = true
@@ -308,21 +397,21 @@ struct OnboardingView: View {
                 VStack(spacing: 20) {
                     header(icon: "rotate-reverse", title: "Review your information", subtitle: "Make sure your information is correct")
                     VStack(spacing: 0) {
-                        ForEach(ViewSelection.allCases.filter({ $0 != .review && $0 != .password && $0 != .welcome && $0 != .loading }).compactMap({ $0.rawValue }), id: \.self) { index in
-                            let firstName = firstName.trimmingCharacters(in: .whitespaces)
-                            let lastName = lastName.trimmingCharacters(in: .whitespaces)
+                        ForEach(ViewSelection.allCases.filter({ $0 != .review && $0 != .password && $0 != .welcome && $0 != .loading && $0 != .login }), id: \.rawValue) { index in
+                            let firstName = firstName.trimmingCharacters(in: .whitespaces).capitalized
+                            let lastName = lastName.trimmingCharacters(in: .whitespaces).capitalized
                             let bio = bio.trimmingCharacters(in: .whitespaces)
                             
                             let button = Group {
                                 Button {
                                     switchView(to: index)
                                 } label: {
-                                    HStack(alignment: index == 5 ? .top : .center, spacing: 11) {
+                                    HStack(alignment: index == .bio ? .top : .center, spacing: 11) {
                                         FAText(iconName: {
                                             switch index {
-                                            case 1, 2:
+                                            case .nickname, .name:
                                                 return "user"
-                                            case 3:
+                                            case .email:
                                                 return "envelope"
                                             default:
                                                 return "file-lines"
@@ -331,11 +420,11 @@ struct OnboardingView: View {
                                         .frame(minWidth: 18)
                                         Text({
                                             switch index {
-                                            case 1:
+                                            case .nickname:
                                                 return nickname.trimmingCharacters(in: .whitespaces)
-                                            case 2:
+                                            case .name:
                                                 return firstName + " " + lastName
-                                            case 3:
+                                            case .email:
                                                 return email.trimmingCharacters(in: .whitespaces)
                                             default:
                                                 return bio
@@ -349,15 +438,15 @@ struct OnboardingView: View {
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                 }
                                 .buttonStyle(ListButtonStyle())
-                                if index != 5 {
+                                if index != .bio {
                                     Divider()
                                 }
                             }
                             
-                            if index == 2 || index == 5 {
-                                if (index == 2 && !firstName.isEmpty && !lastName.isEmpty) {
+                            if index == .name || index == .bio {
+                                if (index == .name && !firstName.isEmpty && !lastName.isEmpty) {
                                     button
-                                } else if (index == 5 && !bio.isEmpty) {
+                                } else if (index == .bio && !bio.isEmpty) {
                                     button
                                 }
                             } else {
@@ -370,17 +459,23 @@ struct OnboardingView: View {
                 .padding()
             }
             Divider()
-            nextButton(title: "Create my account!", completion: {
-                authViewModel.register(firstname: firstName, lastname: lastName, email: email, nickname: nickname, bio: bio, password: password) { error in
-                    if let error {
-                        self.error = error.localizedDescription
-                        self.showError = true
-                        return
+            HStack {
+                backButton(backTo: .welcome, ignoreReview: true)
+                nextButton(title: "Create my account!", completion: {
+                    authViewModel.register(firstname: firstName.capitalized, lastname: lastName.capitalized, email: email, nickname: nickname, bio: bio, password: password) { error in
+                        if let error {
+                            self.error = error.localizedDescription
+                            self.showError = true
+                            return
+                        }
+                        self.switchView()
                     }
-                    self.switchView()
-                }
-            })
+                })
+            }
             .padding()
+        }
+        .alert(isPresented: $showError) {
+            Alert(title: Text(error!), dismissButton: .cancel())
         }
         .padding(-16) // Offset the padding set in the body
         .onAppear {

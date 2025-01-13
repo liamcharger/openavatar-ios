@@ -7,12 +7,23 @@
 
 import SwiftUI
 
+enum CustomButtonType {
+    case full
+    case compact
+}
+
 struct CustomButtonStyle: ButtonStyle {
+    let style: CustomButtonType
+    
+    init(style: CustomButtonType = .full) {
+        self.style = style
+    }
+    
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .padding()
-            .frame(minWidth: 100)
-            .background(Color.blue.gradient)
+            .frame(minWidth: style == .full ? 100 : 20)
+            .background(style == .full ? AnyShapeStyle(Color.blue.gradient) : AnyShapeStyle(Color.backgroundGray))
             .foregroundStyle(Color.white)
             .clipShape(RoundedRectangle(cornerRadius: 15))
             .scaleEffect(configuration.isPressed ? 0.9 : 1)
