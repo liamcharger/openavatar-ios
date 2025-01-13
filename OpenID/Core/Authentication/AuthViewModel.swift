@@ -27,7 +27,7 @@ class AuthViewModel: ObservableObject {
         self.fetchCurrentUser()
     }
     
-    func login(withEmail email: String, password: String, completion: @escaping(Error?) -> Void) {
+    func login(email: String, password: String, completion: @escaping(Error?) -> Void) {
         Auth.auth().signIn(withEmail: email, password: password) { result, error in
             if let error = error {
                 print("Error logging in user: \(error.localizedDescription)")
@@ -44,7 +44,7 @@ class AuthViewModel: ObservableObject {
         }
     }
     
-    func register(withEmail email: String, password: String, username: String, fullname: String, completion: @escaping(Error?) -> Void) {
+    func register(firstname: String, lastname: String, email: String, nickname: String, bio: String, password: String, completion: @escaping(Error?) -> Void) {
         Auth.auth().createUser(withEmail: email, password: password) { result, error in
             if let error = error {
                 print("Error registering user: \(error.localizedDescription)")
@@ -55,11 +55,20 @@ class AuthViewModel: ObservableObject {
             guard let user = result?.user else { return }
             self.tempUserSession = user
             
-            let data = [
+            var data: [String : Any] = [
                 "email": email,
-                "username": username.lowercased(),
-                "fullname": fullname
+                "shareId": user.uid.prefix(7),
+                "nickname": nickname
             ]
+            
+            // We need to append these fields separately because they won't be nil, and we don't want to save a blank string when a property should be nil
+            if !firstname.isEmpty && !lastname.isEmpty {
+                data["firstName"] = firstname
+                data["lastName"] = lastname
+            }
+            if !bio.isEmpty {
+                data["bio"] = bio
+            }
             
             Firestore.firestore().collection("users").document(user.uid)
                 .setData(data) { _ in
@@ -72,28 +81,6 @@ class AuthViewModel: ObservableObject {
         }
     }
     
-    func updateUser(email: String, username: String, fullname: String, completion: @escaping(Error?) -> Void) {
-        self.userSession?.sendEmailVerification(beforeUpdatingEmail: email) { error in
-            if let error = error {
-                completion(error)
-                return
-            }
-            
-            guard let user = self.userSession else { return }
-            
-            let data = ["email": email,
-                        "username": username.lowercased(),
-                        "fullname": fullname]
-            
-            Firestore.firestore().collection("users").document(user.uid)
-                .updateData(data) { error in
-                    self.fetchCurrentUser()
-                    
-                    completion(error)
-                }
-        }
-    }
-    
     func fetchCurrentUser() {
         guard let uid = userSession?.uid else {
             isLoading = false
@@ -102,7 +89,7 @@ class AuthViewModel: ObservableObject {
         
         Firestore.firestore().collection("users")
             .document(uid)
-            .addSnapshotListener { snapshot, error in // We want to use a snapshot listener so we don't constantly have to fetch the user
+            .addSnapshotListener { snapshot, error in // Use a snapshot listener so we don't constantly have to fetch the user
                 guard let snapshot = snapshot else { return }
                 guard let user = try? snapshot.data(as: User.self) else { return }
                 

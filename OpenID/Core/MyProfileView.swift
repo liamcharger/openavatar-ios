@@ -8,12 +8,16 @@
 import SwiftUI
 
 struct MyProfileView: View {
-    let user = User.user
+    @ObservedObject var authViewModel = AuthViewModel.shared
     
     var body: some View {
-        ProfileView(user, shared: false)
-            .navigationTitle("My Profile")
-            .navigationBarTitleDisplayMode(.inline)
+        if let user = authViewModel.currentUser {
+            ProfileView(user)
+                .navigationTitle("My Profile")
+                .navigationBarTitleDisplayMode(.inline)
+        } else {
+            ErrorView(message: "There was an error processing your request.")
+        }
     }
 }
 

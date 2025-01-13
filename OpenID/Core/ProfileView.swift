@@ -11,10 +11,15 @@ struct ProfileView: View {
     @State private var showPronunciation = false
     
     let user: User
-    let shared: Bool
     
+    func isShared() -> Bool {
+        if let uid = AuthViewModel.shared.userSession?.uid, uid == user.id {
+            return false
+        }
+        return true
+    }
     func placeholderAvatar(width: CGFloat) -> some View {
-        @State var pulse = true
+        @State var pulse = false
         
         return Circle()
             .foregroundStyle(Color.gray.opacity(pulse ? 0.6 : 0.2))
@@ -25,9 +30,8 @@ struct ProfileView: View {
             .animation(.smooth.repeatForever(), value: pulse)
     }
     
-    init(_ user: User, shared: Bool) {
+    init(_ user: User) {
         self.user = user
-        self.shared = shared
     }
     
     var body: some View {
@@ -35,7 +39,7 @@ struct ProfileView: View {
             ScrollView {
                 VStack(spacing: 30) {
                     VStack(spacing: 22) {
-                        if shared {
+                        if isShared() {
                             Text("Shared to You")
                                 .padding(9)
                                 .padding(.horizontal, 3)
@@ -66,7 +70,7 @@ struct ProfileView: View {
                         VStack(spacing: 5) {
                             HStack(spacing: 12) {
                                 Text(user.firstname + " " + user.lastname)
-                                    .font(.system(size: 27, design: .monospaced).weight(.heavy))
+                                    .font(.system(size: 28, design: .monospaced).weight(.bold))
                                 if let pronunciation = user.pronunciation {
                                     Button {
                                          self.showPronunciation = true
@@ -129,7 +133,7 @@ struct ProfileView: View {
                                 ContactActionButton(email, type: .email)
                             }
                         }
-                        if !shared {
+                        if !isShared() {
                             Button {
                                 // TODO: add share backend
                             } label: {
@@ -252,6 +256,6 @@ struct ContactRowView: View {
 
 #Preview {
     NavigationView {
-        ProfileView(User.user, shared: false)
+        ProfileView(User.user)
     }
 }

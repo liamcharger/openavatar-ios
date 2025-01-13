@@ -20,6 +20,11 @@ struct OpenIDApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(authViewModel)
+                .onOpenURL { url in
+                    if authViewModel.userSession != nil {
+                        // TODO: get a deeplink and pass it into UserViewModel
+                    }
+                }
         }
     }
 }
