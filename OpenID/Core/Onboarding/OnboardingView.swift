@@ -62,7 +62,12 @@ struct OnboardingView: View {
                 switchView()
             }
         } label: {
-            Text(title)
+            HStack {
+                Text(title)
+                if completion == nil { // Don't show the arrow on the review screen
+                    Image(systemName: "arrow.right")
+                }
+            }
         }
         .buttonStyle(CustomButtonStyle())
     }
@@ -141,7 +146,7 @@ struct OnboardingView: View {
             case .password: passwordView
             case .bio:  bioView
             case .review: review
-            case .loading: ProgressView(String.loading)
+            case .loading: LoadingView()
             }
         }
         .alert(isPresented: $showError) {

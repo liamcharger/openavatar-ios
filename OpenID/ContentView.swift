@@ -15,7 +15,7 @@ struct ContentView: View {
         NavigationView {
             Group {
                 if authViewModel.isLoading || userViewModel.isLoading {
-                    ProgressView()
+                    LoadingView()
                 } else if authViewModel.userSession == nil {
                     OnboardingView()
                 } else if let user = userViewModel.fetchedUser {

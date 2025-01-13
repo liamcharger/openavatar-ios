@@ -56,15 +56,16 @@ class AuthViewModel: ObservableObject {
             self.tempUserSession = user
             
             var data: [String : Any] = [
+                "uid": user.uid,
                 "email": email,
-                "shareId": user.uid.prefix(7),
+                "shareId": user.uid.prefix(9),
                 "nickname": nickname
             ]
             
             // We need to append these fields separately because they won't be nil, and we don't want to save a blank string when a property should be nil
             if !firstname.isEmpty && !lastname.isEmpty {
-                data["firstName"] = firstname
-                data["lastName"] = lastname
+                data["firstname"] = firstname
+                data["lastname"] = lastname
             }
             if !bio.isEmpty {
                 data["bio"] = bio

@@ -12,22 +12,32 @@ struct ProfileView: View {
     
     let user: User
     
+    var subtitle: String? {
+        var result: String = ""
+        let isNicknameSubtitle = (user.firstname != nil && user.lastname != nil)
+        
+        if isNicknameSubtitle {
+            result += user.nickname
+        }
+        if let pronouns = user.pronouns {
+            result += " • \(pronouns)"
+        }
+        
+        return result.isEmpty ? nil : result
+    }
+    
     func isShared() -> Bool {
         if let uid = AuthViewModel.shared.userSession?.uid, uid == user.id {
             return false
         }
         return true
     }
-    func placeholderAvatar(width: CGFloat) -> some View {
+    func placeholderAvatar(width: CGFloat, animate: Bool = true) -> some View {
         @State var pulse = false
         
         return Circle()
-            .foregroundStyle(Color.gray.opacity(pulse ? 0.6 : 0.2))
-            .frame(width: width)
-            .onAppear {
-                pulse.toggle()
-            }
-            .animation(.smooth.repeatForever(), value: pulse)
+            .foregroundStyle(Color.gray.opacity(pulse ? 0.8 : 0.2))
+            .animation(.smooth(duration: 1).repeatForever(autoreverses: true), value: pulse)
     }
     
     init(_ user: User) {
@@ -44,32 +54,47 @@ struct ProfileView: View {
                                 .padding(9)
                                 .padding(.horizontal, 3)
                                 .font(.system(size: 14).weight(.medium))
-                                .foregroundStyle(Color.primary.opacity(0.85))
-                                .background(Color.backgroundGray)
-                                .clipShape(Capsule())
+                                .background {
+                                    Capsule()
+                                        .stroke(Color.primary, lineWidth: 2)
+                                }
                         }
+                        let size = min(200, geo.size.width / 2.8)
                         if let avatarURL = user.avatarURL, let url = URL(string: avatarURL) {
                             // Does AsyncImage work well or should we use Kingfisher?
                             AsyncImage(url: url) { image in
                                 image
                                     .resizable()
                                     .aspectRatio(contentMode: .fit) // Preserve aspect ratio
-                                    .frame(width: geo.size.width / 2.8)
+                                    .frame(width: size)
                                     .clipShape(Circle())
                             } placeholder: {
-                                placeholderAvatar(width: geo.size.width / 2.8)
+                                placeholderAvatar(width: size)
                             }
                         } else {
-                            // Right now, this avatar image is a placeholder for testing
-                            Image(.avatar)
-                                .resizable()
-                                .aspectRatio(contentMode: .fit) // Preserve aspect ratio
-                                .frame(width: geo.size.width / 2.8)
-                                .clipShape(Circle())
+                            Button {
+                                // TODO: add image and upload to cloud
+                            } label: {
+                                placeholderAvatar(width: size, animate: false)
+                                    .overlay {
+                                        VStack(spacing: 9) {
+                                            FAText(iconName: "camera", size: 28)
+                                            Text("Add Photo")
+                                                .font(.system(size: 19).weight(.medium))
+                                        }
+                                    }
+                            }
+                            .frame(width: size, height: size)
                         }
                         VStack(spacing: 5) {
                             HStack(spacing: 12) {
-                                Text(user.firstname + " " + user.lastname)
+                                Text({
+                                    if let firstname = user.firstname, let lastname = user.lastname {
+                                        return "\(firstname) \(lastname)"
+                                    } else {
+                                        return user.nickname
+                                    }
+                                }())
                                     .font(.system(size: 28, design: .monospaced).weight(.bold))
                                 if let pronunciation = user.pronunciation {
                                     Button {
@@ -78,68 +103,62 @@ struct ProfileView: View {
                                         Image(systemName: "person.wave.2.fill")
                                             .font(.system(size: 24))
                                     }
-                                    .popover(isPresented: $showPronunciation, attachmentAnchor: .point(.bottom)) {
+                                    .popover(isPresented: $showPronunciation) {
                                         VStack {
                                             Text(pronunciation)
+                                                .padding(.horizontal)
                                         }
                                         .presentationCompactAdaptation(.popover)
                                     }
                                 }
                             }
-                            Text({
-                                var result = ""
-                                
-                                if let nickname = user.nickname {
-                                    result += nickname
-                                }
-                                if let pronouns = user.pronouns {
-                                    result += " • \(pronouns)"
-                                }
-                                
-                                return result
-                            }())
-                            .font(.system(size: 20.5))
-                                .foregroundStyle(.gray)
+                            if let subtitle {
+                                Text(subtitle)
+                                    .font(.system(size: 20.5))
+                                    .foregroundStyle(.gray)
+                            }
                         }
                     }
-                    HStack(spacing: 12) {
-                        if let phoneNumbers = user.phoneNumbers, !phoneNumbers.isEmpty {
-                            let label = FAText(iconName: "phone", size: 23)
-                            
-                            if phoneNumbers.count > 1 {
-                                Menu {
-                                    ForEach(phoneNumbers, id: \.self) { phoneNumber in
-                                        ContactActionButton(phoneNumber, type: .phoneNumber)
+                    if !isShared() && !(user.phoneNumbers ?? []).isEmpty && !(user.emails ?? []).isEmpty {
+                        HStack(spacing: 12) {
+                            if let phoneNumbers = user.phoneNumbers, !phoneNumbers.isEmpty {
+                                let label = FAText(iconName: "phone", size: 23)
+                                
+                                if phoneNumbers.count > 1 {
+                                    Menu {
+                                        ForEach(phoneNumbers, id: \.self) { phoneNumber in
+                                            ContactActionButton(phoneNumber, type: .phoneNumber)
+                                        }
+                                    } label: {
+                                        ContactRowView(label)
                                     }
-                                } label: {
-                                    ContactRowView(label)
+                                } else if let phoneNumber = phoneNumbers.first {
+                                    ContactActionButton(phoneNumber, type: .phoneNumber)
                                 }
-                            } else if let phoneNumber = phoneNumbers.first {
-                                ContactActionButton(phoneNumber, type: .phoneNumber)
                             }
-                        }
-                        if let emails = user.emails, !emails.isEmpty {
-                            let label = FAText(iconName: "envelope", size: 23)
-                            
-                            if emails.count > 1 {
-                                Menu {
-                                    ForEach(emails, id: \.self) { email in
-                                        ContactActionButton(email, type: .email)
+                            if let emails = user.emails, !emails.isEmpty {
+                                let label = FAText(iconName: "envelope", size: 23)
+                                
+                                if emails.count > 1 {
+                                    Menu {
+                                        ForEach(emails, id: \.self) { email in
+                                            ContactActionButton(email, type: .email)
+                                        }
+                                    } label: {
+                                        ContactRowView(label)
                                     }
-                                } label: {
-                                    ContactRowView(label)
+                                } else if let email = emails.first {
+                                    ContactActionButton(email, type: .email)
                                 }
-                            } else if let email = emails.first {
-                                ContactActionButton(email, type: .email)
                             }
-                        }
-                        if !isShared() {
-                            Button {
-                                // TODO: add share backend
-                            } label: {
-                                ContactRowView(FAText(iconName: "share", size: 23))
+                            if !isShared() {
+                                Button {
+                                    // TODO: add share backend
+                                } label: {
+                                    ContactRowView(FAText(iconName: "share", size: 23))
+                                }
+                                .buttonStyle(.plain)
                             }
-                            .buttonStyle(.plain)
                         }
                     }
                     VStack(spacing: 15) {
@@ -175,11 +194,12 @@ struct ProfileView: View {
                             }
                             .buttonStyle(ListButtonStyle())
                         }
-                        .background(Color.backgroundGray)
                         .clipShape(RoundedRectangle(cornerRadius: 20))
                     }
                 }
                 .padding()
+                // TODO: test on iPad
+                .frame(maxWidth: 600)
                 .frame(maxWidth: .infinity)
             }
         }
