@@ -24,7 +24,7 @@ struct CustomButtonStyle: ButtonStyle {
             .padding()
             .frame(minWidth: style == .full ? 100 : 20)
             .background(style == .full ? AnyShapeStyle(Color.blue.gradient) : AnyShapeStyle(Color.backgroundGray))
-            .foregroundStyle(Color.white)
+            .foregroundStyle(style == .full ? Color.white : Color.primary)
             .clipShape(RoundedRectangle(cornerRadius: 15))
             .scaleEffect(configuration.isPressed ? 0.9 : 1)
             .animation(.smooth(duration: 0.35), value: configuration.isPressed)

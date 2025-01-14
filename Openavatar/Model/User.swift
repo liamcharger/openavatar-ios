@@ -25,6 +25,6 @@ struct User: Identifiable, Codable {
     let phoneNumbers: [String]?
     
     static var user: User {
-        User(uid: "fjksldjfieojfjdsalfjksaldf", firstname: "Liam", lastname: "Willey", email: "email@example.com", nickname: "liamcharger", pronunciation: "Lee-uhm Wil-lee", bio: "User bio goes here. User bio will go here. User bio goes here. User bio goes here. User bio goes here. Should the beautiful bio go here? User bio will go here.\n\nUser bio goes here. User bio definitely goes here. User bio goes here.", job: "Student Developer", pronouns: "he/him", avatarURL: nil /* Empty until we implement web images */, socialAccounts: nil, emails: ["email@example.com", "email2@gmail.com"], phoneNumbers: ["+1 (410)-746-7789", "+1 (710)-603-4001"])
+        User(uid: "fjksldjfieojfjdsalfjksaldf", firstname: nil, lastname: nil, email: "email@example.com", nickname: "liamcharger", pronunciation: nil, bio: "User bio goes here. User bio will go here. User bio goes here. User bio goes here. User bio goes here. Should the beautiful bio go here? User bio will go here.\n\nUser bio goes here. User bio definitely goes here. User bio goes here.", job: nil, pronouns: nil, avatarURL: nil /* Empty until we implement web images */, socialAccounts: ["github.com/liamcharger"], emails: ["email@example.com", "email2@gmail.com"], phoneNumbers: ["+1 (410)-746-7789", "+1 (710)-603-4001"])
     }
 }

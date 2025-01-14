@@ -4,13 +4,22 @@
     "%@" : {
 
     },
-    "Add %@" : {
-
-    },
     "Add a bio?" : {
 
     },
+    "Add Job" : {
+
+    },
+    "Add Name" : {
+
+    },
     "Add Photo" : {
+
+    },
+    "Add Pronouns" : {
+
+    },
+    "Add Pronunciation" : {
 
     },
     "Call" : {
@@ -41,9 +50,6 @@
 
     },
     "Getting things ready..." : {
-
-    },
-    "GitHub" : {
 
     },
     "I have an account" : {
@@ -92,6 +98,9 @@
 
     },
     "Send Email" : {
+
+    },
+    "Share my profile" : {
 
     },
     "Shared to You" : {

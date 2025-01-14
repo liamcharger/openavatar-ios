@@ -11,7 +11,7 @@ struct ListButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .buttonStyle(.plain)
-            .padding()
+            .padding(13)
             .foregroundStyle(Color.primary)
             .background(configuration.isPressed ? Color.backgroundLightGray : Color.backgroundGray)
     }

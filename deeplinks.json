@@ -1,0 +1,18 @@
+{
+  "title" : "Openavatar",
+  "bundleIdentifier" : "com.liamwilley.Openavatar",
+  "deeplinks" : [
+    {
+      "title" : "Profile",
+      "url" : "openavatar:\/\/profile\/123456789",
+      "identifier" : "73B30274-5290-422B-938E-AE574649FA30"
+    }
+  ],
+  "pushNotifications" : [
+
+  ],
+  "locations" : [
+
+  ],
+  "identifier" : "E22CEF18-EA90-42E7-8527-3F65709B64AE"
+}

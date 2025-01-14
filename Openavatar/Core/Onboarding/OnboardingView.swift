@@ -41,7 +41,7 @@ struct OnboardingView: View {
     @State private var error: String?
     @State private var showError = false
     
-    @State private var currentView: ViewSelection = .welcome
+    @State private var currentView: ViewSelection = .password
     
     @FocusState private var isNicknameFocused: Bool
     @FocusState private var isEmailFocused: Bool
@@ -73,12 +73,13 @@ struct OnboardingView: View {
             }
         } label: {
             Image(systemName: "arrow.left")
+                .frame(minHeight: 24)
         }
         .buttonStyle(CustomButtonStyle(style: .compact))
     }
     private func nextButton(title: LocalizedStringKey, completion: (() -> Void)? = nil) -> some View {
         Button {
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            haptic(style: .button)
             
             if let completion {
                 completion()
@@ -94,6 +95,7 @@ struct OnboardingView: View {
             }
         }
         .buttonStyle(CustomButtonStyle())
+        .transition(.move(edge: .trailing).combined(with: .opacity))
     }
     private func header(icon: String, title: LocalizedStringKey, subtitle: LocalizedStringKey? = nil, accent: Color = .primary, error: Bool = false) -> some View {
         VStack(spacing: 10) {
@@ -179,6 +181,10 @@ struct OnboardingView: View {
         .onAppear {
             animateIn()
         }
+        .onChange(of: currentView) { _ in
+            showError = false
+            error = nil
+        }
     }
     
     var welcomeView: some View {
@@ -214,7 +220,7 @@ struct OnboardingView: View {
             VStack {
                 CustomTextField("Email", text: $loginEmail)
                     .focused($isEmailFocused)
-                CustomPasswordField("Password", text: $loginPassword)
+                CustomTextField("Password", text: $loginPassword, type: .secure)
             }
             .autocapitalization(.none)
             HStack {
@@ -229,13 +235,10 @@ struct OnboardingView: View {
                             switchView(to: .loading)
                         }
                     })
-                    .offset(y: canSubmit ? 0 : 15)
-                    .opacity(canSubmit ? 1 : 0)
-                    .animation(.smooth, value: loginEmail)
-                    .animation(.smooth, value: loginPassword)
                 }
             }
             .frame(maxWidth: .infinity)
+            .animation(.smooth, value: canSubmit)
         }
         .onAppear {
             isEmailFocused = true
@@ -249,7 +252,6 @@ struct OnboardingView: View {
         
         return VStack(spacing: 20) {
             header(icon: canSubmit ? "check" : "user", title: "First, pick a nickname.", accent: canSubmit ? .green : .primary)
-            // TODO: do not allow capitals or spaces
             CustomTextField("Nickname", text: $nickname)
                 .focused($isNicknameFocused)
                 .autocapitalization(.none)
@@ -257,15 +259,19 @@ struct OnboardingView: View {
                 backButton(backTo: .welcome)
                 if canSubmit {
                     nextButton(title: "My username is ready!")
-                        .offset(y: canSubmit ? 0 : 15)
-                        .opacity(canSubmit ? 1 : 0)
-                        .animation(.smooth, value: nickname)
                 }
             }
+            .animation(.smooth, value: canSubmit)
             .frame(maxWidth: .infinity)
         }
+        .onChange(of: nickname) { nickname in
+            self.nickname = nickname
+                .replacingOccurrences(of: " ", with: "")
+                .replacingOccurrences(of: "@", with: "") // We don't want any @'s in a username
+                .lowercased()
+        }
         .onAppear {
-            isNicknameFocused = true
+            self.isNicknameFocused = true
         }
     }
     
@@ -291,12 +297,9 @@ struct OnboardingView: View {
                 backButton(backTo: .nickname)
                 if canSubmit {
                     nextButton(title: firstNameEmpty && lastNameEmpty ? "I'll add one later" : "Continue!")
-                        .offset(y: canSubmit ? 0 : 15)
-                        .opacity(canSubmit ? 1 : 0)
-                        .animation(.smooth, value: firstName)
-                        .animation(.smooth, value: lastName)
                 }
             }
+            .animation(.smooth, value: canSubmit)
             .frame(maxWidth: .infinity)
         }
     }
@@ -311,11 +314,9 @@ struct OnboardingView: View {
                 backButton(backTo: .name)
                 if isEmailValid(email) {
                     nextButton(title: "My email is correct!")
-                        .offset(y: isEmailValid(email) ? 0 : 15)
-                        .opacity(isEmailValid(email) ? 1 : 0)
-                        .animation(.smooth, value: isEmailValid(email))
                 }
             }
+            .animation(.smooth, value: isEmailValid(email))
             .frame(maxWidth: .infinity)
         }
         .onAppear {
@@ -347,22 +348,20 @@ struct OnboardingView: View {
                 }
             }(), error: !doPasswordsMatch)
             VStack {
-                CustomPasswordField("Password", text: $password)
-                CustomPasswordField("Confirm Password", text: $confirmPassword)
+                CustomTextField("Password", text: $password, type: .secure)
+                CustomTextField("Confirm Password", text: $confirmPassword, type: .secure)
             }
             .autocapitalization(.none)
             HStack {
                 backButton(backTo: .email)
                 if canSubmit && doPasswordsMatch {
                     nextButton(title: "I've entered my password!")
-                        .offset(y: canSubmit && doPasswordsMatch ? 0 : 15)
-                        .opacity(canSubmit && doPasswordsMatch ? 1 : 0)
-                        .animation(.smooth, value: password)
-                        .animation(.smooth, value: confirmPassword)
                 }
             }
             .frame(maxWidth: .infinity)
         }
+        .animation(.smooth, value: canSubmit)
+        .animation(.smooth, value: doPasswordsMatch)
     }
     
     var bioView: some View {
@@ -396,7 +395,7 @@ struct OnboardingView: View {
             ScrollView {
                 VStack(spacing: 20) {
                     header(icon: "rotate-reverse", title: "Review your information", subtitle: "Make sure your information is correct")
-                    VStack(spacing: 0) {
+                    CustomList {
                         ForEach(ViewSelection.allCases.filter({ $0 != .review && $0 != .password && $0 != .welcome && $0 != .loading && $0 != .login }), id: \.rawValue) { index in
                             let firstName = firstName.trimmingCharacters(in: .whitespaces).capitalized
                             let lastName = lastName.trimmingCharacters(in: .whitespaces).capitalized
@@ -404,6 +403,7 @@ struct OnboardingView: View {
                             
                             let button = Group {
                                 Button {
+                                    haptic(style: .list)
                                     switchView(to: index)
                                 } label: {
                                     HStack(alignment: index == .bio ? .top : .center, spacing: 11) {
@@ -438,9 +438,7 @@ struct OnboardingView: View {
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                 }
                                 .buttonStyle(ListButtonStyle())
-                                if index != .bio {
-                                    Divider()
-                                }
+                                Divider()
                             }
                             
                             if index == .name || index == .bio {
@@ -454,7 +452,6 @@ struct OnboardingView: View {
                             }
                         }
                     }
-                    .clipShape(RoundedRectangle(cornerRadius: 20))
                 }
                 .padding()
             }
