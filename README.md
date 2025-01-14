@@ -2,7 +2,8 @@
 
 OpenID is an open-source alternative to Gravatar, and products like it. This project was built for High Seas.
 
-> [!NOTE] This project is in *very* early stages.
+> [!IMPORTANT]  
+> This project is in *very* early stages.
 
 Since this project uses Firebase, you'll need to add a GoogleService-Info.plist to the project directory before running the app. You can get this file by creating a new Firebase project at [the Firebase Console](https://console.firebase.google.com) and adding an iOS app to it.
 
