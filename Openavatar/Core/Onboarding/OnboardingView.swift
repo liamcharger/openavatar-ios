@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct OnboardingView: View {
-    enum ViewSelection: Int, CaseIterable {
+    private enum ViewSelection: Int, CaseIterable {
         case login
         case welcome
         case nickname

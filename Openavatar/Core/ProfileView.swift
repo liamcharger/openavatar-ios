@@ -6,18 +6,20 @@
 //
 
 import SwiftUI
-
-enum ProfileElement {
-    case name
-    case bio
-    case contactInfo
-    case links
-    case pronunciation
-    case pronouns
-    case job
-}
+import Kingfisher
 
 struct ProfileView: View {
+    private enum ViewSelection: Int, CaseIterable {
+        case profile
+        case name
+        case bio
+        case contactInfo
+        case links
+        case pronunciation
+        case pronouns
+        case job
+    }
+    
     @Environment(\.openURL) var openURL
     @Environment(\.colorScheme) var colorScheme
     
@@ -26,10 +28,16 @@ struct ProfileView: View {
     @State private var showPronunciation = false
     @State private var profileImage: UIImage?
     @State private var showProfileImagePicker = false
+    @State private var hasCompletedInitalAnimation = false
+    @State private var showScreen = false
+    
+    @State private var currentScreen: ViewSelection = .profile
+    
+    private let animation = Animation.smooth(duration: 0.9)
     
     let user: User
     
-    var subtitle: String? {
+    private var subtitle: String? {
         var result: String = ""
         let bullet = " • "
         let isNicknameSubtitle = (user.firstname != nil && user.lastname != nil)
@@ -51,7 +59,7 @@ struct ProfileView: View {
         return result.isEmpty ? nil : result
     }
     
-    func isShared() -> Bool {
+    private func isShared() -> Bool {
         #if DEBUG
         return false
         #else
@@ -61,9 +69,7 @@ struct ProfileView: View {
         return true
         #endif
     }
-    func placeholderAvatar(width: CGFloat, animate: Bool = true) -> some View {
-        @State var pulse = false
-        
+    private func placeholderAvatar(width: CGFloat) -> some View {
         return Group {
             if let profileImage {
                 Image(uiImage: profileImage)
@@ -73,8 +79,7 @@ struct ProfileView: View {
                     .opacity(0.6) // This view will only be shown while the image is uploading, so we add some opacity so the ProgressView is visible
             } else {
                 Circle()
-                    .foregroundStyle(Color.gray.opacity(pulse ? 0.7 : 0.2))
-                    .animation(.smooth(duration: 1).repeatForever(autoreverses: true), value: pulse)
+                    .foregroundStyle(Color.gray.opacity(0.2))
                     .background {
                         Circle()
                             .stroke(.gray.opacity(0.7), lineWidth: 1)
@@ -83,7 +88,7 @@ struct ProfileView: View {
         }
         .frame(width: width, height: width)
     }
-    func addButton(for element: ProfileElement) -> some View {
+    private func addButton(for element: ViewSelection) -> some View {
         Button {
             switch element {
             case .name:
@@ -122,13 +127,13 @@ struct ProfileView: View {
             .clipShape(RoundedRectangle(cornerRadius: 12))
         }
     }
-    func elementPrompt(for element: ProfileElement) -> some View {
+    private func elementPrompt(for element: ViewSelection) -> some View {
         Group {
             // We don't want to show any prompts if the profile has been shared
             if !isShared() {
                 Button {
-                    haptic(style: .button)
-                    // TODO: implement add sheets
+                    haptic(style: .list)
+                    switchView(to: element)
                 } label: {
                     HStack(spacing: 10) {
                         Image(systemName: "plus")
@@ -169,7 +174,7 @@ struct ProfileView: View {
             }
         }
     }
-    func getSocialPlatform(from urlString: String) -> (name: String, icon: String?) {
+    private func getSocialPlatform(from urlString: String) -> (name: String, icon: String?) {
         let iconVariant = (colorScheme == .dark ? "_light" : "_dark")
         
         let platforms: [String: (name: String, iconName: String)] = [
@@ -184,7 +189,8 @@ struct ProfileView: View {
         ]
         
         // TODO: add a check when urls are added to remove https
-        guard let url = URL(string: "https://" + urlString),
+        let urlString = "https://" + urlString
+        guard let url = URL(string: urlString),
               let host = url.host?.lowercased() else {
             return (name: urlString, icon: nil)
         }
@@ -198,12 +204,48 @@ struct ProfileView: View {
         
         return (name: urlString, icon: nil)
     }
+    private func switchView(to view: ViewSelection = .profile) {
+        withAnimation(animation) {
+            showScreen = false
+        }
+        wait(for: 0.9) {
+            currentScreen = view
+            withAnimation(animation) {
+                showScreen = true
+                hasCompletedInitalAnimation = true
+            }
+        }
+    }
+    private func wait(for interval: Double, completion: @escaping() -> Void) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + interval) {
+            completion()
+        }
+    }
     
     init(_ user: User) {
         self.user = user
     }
     
     var body: some View {
+        ZStack {
+            switch currentScreen {
+            case .profile:
+                profile
+                    .scaleEffect(showScreen ? 1 : 1.1)
+            case .bio:
+                addBio
+            default:
+                EmptyView()
+            }
+        }
+        .disabled(!showScreen)
+        .opacity(showScreen ? 1 : 0)
+        .onAppear {
+            switchView()
+        }
+    }
+    
+    var profile: some View {
         GeometryReader { geo in
             ScrollView {
                 VStack(spacing: 30) {
@@ -223,26 +265,23 @@ struct ProfileView: View {
                         if let avatarURL = user.avatarURL, let url = URL(
                             string: avatarURL
                         ) {
-                            // Does AsyncImage work well or should we use Kingfisher?
-                            AsyncImage(url: url) { image in
-                                image
-                                    .resizable()
-                                    .aspectRatio(
-                                        contentMode: .fill
-                                    ) // Preserve aspect ratio
-                                    .frame(width: size)
-                                    .clipShape(Circle())
-                            } placeholder: {
-                                placeholderAvatar(width: size)
-                                    .overlay {
-                                        ProgressView()
-                                    }
-                            }
+                            KFImage(url)
+                                .placeholder { _ in
+                                    placeholderAvatar(width: size)
+                                        .overlay {
+                                            ProgressView()
+                                                .tint(.white)
+                                        }
+                                }
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(width: size)
+                                .clipShape(Circle())
                         } else {
                             Button {
                                 showProfileImagePicker = true
                             } label: {
-                                placeholderAvatar(width: size, animate: false)
+                                placeholderAvatar(width: size)
                                     .overlay {
                                         if profileImage != nil {
                                             ProgressView()
@@ -299,6 +338,8 @@ struct ProfileView: View {
                                     }
                                 } else if !isShared() {
                                     Button {
+                                        haptic(style: .light)
+                                        switchView(to: .pronunciation)
                                         showPronunciation = true
                                     } label: {
                                         ZStack(alignment: .bottomTrailing) {
@@ -310,14 +351,13 @@ struct ProfileView: View {
                                                 .foregroundStyle(.white)
                                                 .background(Color.blue)
                                                 .clipShape(Circle())
-                                                .background {
+                                                .overlay {
                                                     Circle()
                                                         .stroke(Color(.systemBackground), lineWidth: 5)
                                                 }
                                                 .offset(x: 9, y: 12)
                                         }
                                     }
-                                    // TODO: add "add pronunciation" button
                                 }
                             }
                             if let subtitle {
@@ -384,28 +424,44 @@ struct ProfileView: View {
                                     .padding(.horizontal)
                                 }
                             }
-                            .onTapGesture {
-                                haptic(style: .button)
-                            }
                         }
                     }
                     VStack(spacing: 28) {
                         if let bio = user.bio {
-                            Text(bio)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(13)
-                                .background(Color.materialGray)
-                                .clipShape(RoundedRectangle(cornerRadius: 20))
-                                .background {
-                                    RoundedRectangle(cornerRadius: 20)
-                                        .stroke(Color(.lightGray).opacity(0.35), lineWidth: 1)
+                            Button {
+                                
+                            } label: {
+                                ZStack(alignment: .topTrailing) {
+                                    Text(bio)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .multilineTextAlignment(.leading)
+                                        .padding(13)
+                                        .foregroundStyle(Color.primary)
+                                        .background(Color.materialGray)
+                                        .clipShape(RoundedRectangle(cornerRadius: 20))
+                                        .background {
+                                            RoundedRectangle(cornerRadius: 20)
+                                                .stroke(Color(.lightGray).opacity(0.35), lineWidth: 1)
+                                        }
+                                    Button {
+                                        haptic(style: .light)
+                                        switchView(to: .bio)
+                                    } label: {
+                                        FAText(iconName: "pen", size: 16)
+                                            .padding(9)
+                                            .foregroundStyle(Color.white)
+                                            .background(Color.blue)
+                                            .clipShape(Circle())
+                                            .offset(x: 9, y: -9)
+                                    }
                                 }
+                            }
                         }
                         if let links = user.socialAccounts {
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text("Social Links".uppercased())
+                            VStack(alignment: .leading, spacing: 7) {
+                                Text("Social Accounts".uppercased())
                                     .foregroundStyle(Color.gray.opacity(0.9))
-                                    .font(.system(size: 15.5).weight(.medium))
+                                    .font(.system(size: 13.5).weight(.medium))
                                 CustomList {
                                     ForEach(links.indices, id: \.self) { index in
                                         let link = links[index]
@@ -414,7 +470,8 @@ struct ProfileView: View {
                                         Button {
                                             guard let url = URL(string: link) else { return }
                                             
-                                            openURL(url)
+                                            haptic(style: .list)
+                                            UIApplication.shared.open(url)
                                         } label: {
                                             HStack(spacing: 10) {
                                                 Group {
@@ -473,6 +530,20 @@ struct ProfileView: View {
             }
         }
     }
+    
+    var addBio: some View {
+        VStack {
+            Button("Back") {
+                switchView()
+            }
+            Button("Update Bio") {
+                userViewModel.updateBio("""
+                                        Developer, a.k.a nerd
+                                        PineTime enthusiast
+                                        """)
+            }
+        }
+    }
 }
 
 struct ContactActionButton: View {
@@ -500,11 +571,13 @@ struct ContactActionButton: View {
     var body: some View {
         Menu(string) {
             Button {
+                haptic(style: .list)
                 UIPasteboard.general.string = string
             } label: {
                 Label("Copy", systemImage: "doc.on.clipboard")
             }
             Button {
+                haptic(style: .list)
                 executeSocial()
             } label: {
                 if type == .email {

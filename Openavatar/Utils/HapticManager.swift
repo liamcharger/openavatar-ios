@@ -25,9 +25,17 @@ struct HapticsManager {
 }
 
 func haptic(style: HapticStyle) {
-    if style == .list {
-        HapticsManager.hapticWithImpact(style: .medium)
-    } else {
-        HapticsManager.hapticWithImpact(style: .heavy)
+    DispatchQueue.main.async {
+        if style == .list {
+            HapticsManager.hapticWithImpact(style: .medium)
+        } else {
+            HapticsManager.hapticWithImpact(style: .heavy)
+        }
+    }
+}
+
+func haptic(style: UIImpactFeedbackGenerator.FeedbackStyle) {
+    DispatchQueue.main.async {
+        HapticsManager.hapticWithImpact(style: style)
     }
 }

@@ -15,7 +15,19 @@ class UserViewModel: ObservableObject {
     
     @Published var fetchedUser: User?
     @Published var isLoading = false
+    @Published var showError = false
     @Published var isLoadingProfilePicture = false
+    
+    @Published var errorMessage = ""
+    
+    var uid: String {
+        return Auth.auth().currentUser?.uid ?? ""
+    }
+    
+    private func error(_ error: Error) {
+        showError = true
+        errorMessage = error.localizedDescription
+    }
     
     func fetchUser(with uid: String) {
         isLoading = true
@@ -34,7 +46,6 @@ class UserViewModel: ObservableObject {
     func uploadProfileImage(image: UIImage) {
         isLoadingProfilePicture = true
         
-        guard let uid = Auth.auth().currentUser?.uid else { return }
         guard let imageData = image.jpegData(compressionQuality: 0.8) else { return }
         let imageId = UUID().uuidString
         let ref = Storage.storage().reference().child("images/\(imageId)")
@@ -59,7 +70,7 @@ class UserViewModel: ObservableObject {
                         return
                     }
                     
-                    Firestore.firestore().collection("users").document(uid).updateData(["avatarURL": url]) { error in
+                    Firestore.firestore().collection("users").document(self.uid).updateData(["avatarURL": url]) { error in
                         if let error {
                             // TODO: add user-facing error handling
                             print(error.localizedDescription)
@@ -68,6 +79,16 @@ class UserViewModel: ObservableObject {
                         self.isLoadingProfilePicture = false
                         return
                     }
+                }
+            }
+    }
+    
+    func updateBio(_ bio: String) {
+        Firestore.firestore().collection("users").document(uid)
+            .updateData(["bio": bio]) { error in
+                if let error {
+                    self.error(error)
+                    return
                 }
             }
     }
