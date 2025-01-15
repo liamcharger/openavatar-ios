@@ -13,16 +13,14 @@ struct ContentView: View {
     
     var body: some View {
         NavigationView {
-            Group {
-                if authViewModel.isLoading || userViewModel.isLoading {
-                    LoadingView()
-                } else if authViewModel.userSession == nil {
-                    OnboardingView()
-                } else if let user = userViewModel.fetchedUser {
-                    ProfileView(user)
-                } else {
-                    MyProfileView()
-                }
+            if authViewModel.isLoading || userViewModel.isLoading {
+                LoadingView()
+            } else if authViewModel.userSession == nil {
+                OnboardingView()
+            } else if let user = userViewModel.fetchedUser {
+                ProfileView(user)
+            } else if let currentUser = authViewModel.currentUser {
+                ProfileView(currentUser)
             }
         }
         .navigationViewStyle(.stack)

@@ -41,7 +41,7 @@ struct OnboardingView: View {
     @State private var error: String?
     @State private var showError = false
     
-    @State private var currentView: ViewSelection = .password
+    @State private var currentView: ViewSelection = .welcome
     
     @FocusState private var isNicknameFocused: Bool
     @FocusState private var isEmailFocused: Bool
@@ -79,7 +79,7 @@ struct OnboardingView: View {
     }
     private func nextButton(title: LocalizedStringKey, completion: (() -> Void)? = nil) -> some View {
         Button {
-            haptic(style: .button)
+            haptic(style: .heavy)
             
             if let completion {
                 completion()
@@ -99,7 +99,7 @@ struct OnboardingView: View {
     }
     private func header(icon: String, title: LocalizedStringKey, subtitle: LocalizedStringKey? = nil, accent: Color = .primary, error: Bool = false) -> some View {
         VStack(spacing: 10) {
-            FAText(iconName: icon, size: 32)
+            FAText(icon, size: 32)
                 .padding()
                 .background(accent == .primary ? .clear : accent.opacity(0.1))
                 .background {
@@ -403,11 +403,11 @@ struct OnboardingView: View {
                             
                             let button = Group {
                                 Button {
-                                    haptic(style: .list)
+                                    haptic(style: .light)
                                     switchView(to: index)
                                 } label: {
                                     HStack(alignment: index == .bio ? .top : .center, spacing: 11) {
-                                        FAText(iconName: {
+                                        FAText({
                                             switch index {
                                             case .nickname, .name:
                                                 return "user"
@@ -416,7 +416,7 @@ struct OnboardingView: View {
                                             default:
                                                 return "file-lines"
                                             }
-                                        }(), size: 18)
+                                        }())
                                         .frame(minWidth: 18)
                                         Text({
                                             switch index {

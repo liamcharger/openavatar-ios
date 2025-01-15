@@ -7,35 +7,26 @@
 
 import SwiftUI
 
-enum HapticStyle {
-    case list
-    case button
-}
-
 struct HapticsManager {
     static func hapticWithPattern(type: UINotificationFeedbackGenerator.FeedbackType) {
-        let generator = UINotificationFeedbackGenerator()
-        generator.notificationOccurred(.success)
+        DispatchQueue.main.async {
+            let generator = UINotificationFeedbackGenerator()
+            generator.notificationOccurred(.success)
+        }
     }
     
     static func hapticWithImpact(style: UIImpactFeedbackGenerator.FeedbackStyle) {
-        let generator = UIImpactFeedbackGenerator(style: style)
-        generator.impactOccurred()
-    }
-}
-
-func haptic(style: HapticStyle) {
-    DispatchQueue.main.async {
-        if style == .list {
-            HapticsManager.hapticWithImpact(style: .medium)
-        } else {
-            HapticsManager.hapticWithImpact(style: .heavy)
+        DispatchQueue.main.async {
+            let generator = UIImpactFeedbackGenerator(style: style)
+            generator.impactOccurred()
         }
     }
 }
 
 func haptic(style: UIImpactFeedbackGenerator.FeedbackStyle) {
-    DispatchQueue.main.async {
-        HapticsManager.hapticWithImpact(style: style)
-    }
+    HapticsManager.hapticWithImpact(style: style)
+}
+
+func haptic(type: UINotificationFeedbackGenerator.FeedbackType) {
+    HapticsManager.hapticWithPattern(type: type)
 }

@@ -7,28 +7,22 @@
     "Add a bio?" : {
 
     },
-    "Add Job" : {
-
-    },
-    "Add Name" : {
-
-    },
     "Add Photo" : {
 
     },
-    "Add Pronouns" : {
-
-    },
-    "Add Pronunciation" : {
-
-    },
     "Back" : {
+
+    },
+    "Bio" : {
 
     },
     "Call" : {
 
     },
     "Confirm Password" : {
+
+    },
+    "Contact Info" : {
 
     },
     "Continue!" : {
@@ -70,7 +64,13 @@
     "I've entered my password!" : {
 
     },
+    "Job" : {
+
+    },
     "Last" : {
+
+    },
+    "Loading" : {
 
     },
     "Loading things up..." : {
@@ -88,6 +88,9 @@
     "My username is ready!" : {
 
     },
+    "Name" : {
+
+    },
     "Nickname" : {
 
     },
@@ -95,6 +98,18 @@
 
     },
     "Password" : {
+
+    },
+    "profile" : {
+
+    },
+    "Pronouns" : {
+
+    },
+    "Pronunciation" : {
+
+    },
+    "Replace" : {
 
     },
     "Review your information" : {
@@ -107,6 +122,9 @@
 
     },
     "Shared to You" : {
+
+    },
+    "Social Accounts" : {
 
     },
     "Talking to servers..." : {

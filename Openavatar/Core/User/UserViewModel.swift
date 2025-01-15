@@ -15,8 +15,10 @@ class UserViewModel: ObservableObject {
     
     @Published var fetchedUser: User?
     @Published var isLoading = false
+    @Published var isLoadingAvatar = false
     @Published var showError = false
-    @Published var isLoadingProfilePicture = false
+    @Published var showScreen = false
+    @Published var selectedImage: UIImage?
     
     @Published var errorMessage = ""
     
@@ -43,44 +45,88 @@ class UserViewModel: ObservableObject {
             }
     }
     
-    func uploadProfileImage(image: UIImage) {
-        isLoadingProfilePicture = true
+    func saveAvatar() {
+        guard let image = selectedImage else { return }
         
+        if let rep = image.jpegData(compressionQuality: 0.8) {
+            UserDefaults.standard.set(rep, forKey: "profileImage")
+        }
+    }
+    
+    func getAvatar() -> UIImage? {
+        if let imageData = UserDefaults.standard.object(forKey: "profileImage") as? Data,
+            let image = UIImage(data: imageData) {
+            return image
+        }
+        return nil
+    }
+    
+    private func removeAvatarFromStorage(_ user: User) {
+        if let avatarURL = user.avatarURL {
+            Storage.storage().reference(forURL: avatarURL).delete { error in
+                if let error {
+                    print(error.localizedDescription)
+                    return
+                }
+            }
+        }
+    }
+    
+    private func removeAvatarFromFirestore(_ user: User) {
+        Firestore.firestore().collection("users").document(user.uid)
+            .updateData(["avatarURL": FieldValue.delete()]) { error in
+                if let error {
+                    print(error.localizedDescription)
+                    return
+                }
+            }
+    }
+    
+    func removeAvatar(_ user: User) {
+        removeAvatarFromStorage(user)
+        removeAvatarFromFirestore(user)
+    }
+    
+    func uploadAvatar(_ user: User) {
+        isLoadingAvatar = true
+        
+        guard let image = selectedImage else { return }
         guard let imageData = image.jpegData(compressionQuality: 0.8) else { return }
         let imageId = UUID().uuidString
         let ref = Storage.storage().reference().child("images/\(imageId)")
         
-        ref
-            .putData(imageData, metadata: nil) { metadata, error in
+        removeAvatarFromStorage(user)
+        
+        ref.putData(imageData, metadata: nil) { metadata, error in
+            if let error {
+                // TODO: add user-facing error handling
+                print(error.localizedDescription)
+                return
+            }
+            
+            ref.downloadURL { url, error in
+                guard let url = url?.absoluteString else {
+                    print("Couldn't get the absolute string for the image URL.")
+                    return
+                }
+                
                 if let error {
-                    // TODO: add user-facing error handling
                     print(error.localizedDescription)
                     return
                 }
                 
-                ref.downloadURL { url, error in
-                    guard let url = url?.absoluteString else {
-                        print("Couldn't get the absolute string for the image URL.")
-                        return
-                    }
-                    
+                Firestore.firestore().collection("users").document(self.uid).updateData(["avatarURL": url]) { error in
                     if let error {
-                        // TODO: add user-facing error handling
                         print(error.localizedDescription)
-                        return
                     }
                     
-                    Firestore.firestore().collection("users").document(self.uid).updateData(["avatarURL": url]) { error in
-                        if let error {
-                            // TODO: add user-facing error handling
-                            print(error.localizedDescription)
-                        }
-                        
-                        self.isLoadingProfilePicture = false
-                        return
-                    }
+                    self.saveAvatar()
+                    self.selectedImage = nil
+                    self.isLoadingAvatar = false
+                    return
                 }
             }
+        }
     }
     
     func updateBio(_ bio: String) {

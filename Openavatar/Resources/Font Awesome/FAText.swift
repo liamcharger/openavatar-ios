@@ -10,14 +10,15 @@ import SwiftUI
 
 struct FAText: View {
     var iconName: String
-    private var icon: FAIcon
     var size: CGFloat
     var style: FAStyle
+    
+    private var icon: FAIcon
     private var weight: Font.Weight {
         return style.weight
     }
     
-    init(iconName: String, size: CGFloat, style: FAStyle? = nil) {
+    init(_ iconName: String, size: CGFloat = 18, style: FAStyle? = nil) {
         self.size = size
         self.style = style ?? .regular
         self.iconName = iconName.hasPrefix("fa-") ? String(iconName.dropFirst(3)) : iconName

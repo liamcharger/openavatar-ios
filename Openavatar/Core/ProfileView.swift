@@ -9,15 +9,15 @@ import SwiftUI
 import Kingfisher
 
 struct ProfileView: View {
-    private enum ViewSelection: Int, CaseIterable {
+    private enum ViewSelection: LocalizedStringKey, CaseIterable {
         case profile
-        case name
-        case bio
-        case contactInfo
-        case links
-        case pronunciation
-        case pronouns
-        case job
+        case name = "Name"
+        case bio = "Bio"
+        case contactInfo = "Contact Info"
+        case links = "Social Accounts"
+        case pronunciation = "Pronunciation"
+        case pronouns = "Pronouns"
+        case job = "Job"
     }
     
     @Environment(\.openURL) var openURL
@@ -26,10 +26,9 @@ struct ProfileView: View {
     @ObservedObject var userViewModel = UserViewModel.shared
     
     @State private var showPronunciation = false
-    @State private var profileImage: UIImage?
-    @State private var showProfileImagePicker = false
+    @State private var showAvatarPicker = false
     @State private var hasCompletedInitalAnimation = false
-    @State private var showScreen = false
+    @State private var viewTitle: LocalizedStringKey = "My Profile"
     
     @State private var currentScreen: ViewSelection = .profile
     
@@ -70,69 +69,20 @@ struct ProfileView: View {
         #endif
     }
     private func placeholderAvatar(width: CGFloat) -> some View {
-        return Group {
-            if let profileImage {
-                Image(uiImage: profileImage)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .clipShape(Circle())
-                    .opacity(0.6) // This view will only be shown while the image is uploading, so we add some opacity so the ProgressView is visible
-            } else {
+        return Circle()
+            .foregroundStyle(Color.gray.opacity(0.2))
+            .background {
                 Circle()
-                    .foregroundStyle(Color.gray.opacity(0.2))
-                    .background {
-                        Circle()
-                            .stroke(.gray.opacity(0.7), lineWidth: 1)
-                    }
+                    .stroke(.gray.opacity(0.3), lineWidth: 1)
             }
-        }
-        .frame(width: width, height: width)
-    }
-    private func addButton(for element: ViewSelection) -> some View {
-        Button {
-            switch element {
-            case .name:
-                // TODO: add fullname
-                break
-            case .pronouns:
-                // TODO: add pronouns
-                break
-            case .job:
-                // TODO: add job
-                break
-            default:
-                // TODO: add pronunciation
-                break
-            }
-        } label: {
-            HStack(spacing: 6) {
-                FAText(iconName: "plus", size: 19)
-                Text({
-                    switch element {
-                    case .name:
-                        return "Add Name"
-                    case .pronouns:
-                        return "Add Pronouns"
-                    case .job:
-                        return "Add Job"
-                    default:
-                        return "Add Pronunciation"
-                    }
-                }())
-            }
-            .padding(8)
-            .padding(.horizontal, 2)
-            .foregroundStyle(.white)
-            .background(Color.blue.gradient) // Should we use plain .blue or its gradient form
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-        }
+            .frame(width: width, height: width)
     }
     private func elementPrompt(for element: ViewSelection) -> some View {
         Group {
             // We don't want to show any prompts if the profile has been shared
             if !isShared() {
                 Button {
-                    haptic(style: .list)
+                    haptic(style: .medium)
                     switchView(to: element)
                 } label: {
                     HStack(spacing: 10) {
@@ -174,44 +124,44 @@ struct ProfileView: View {
             }
         }
     }
-    private func getSocialPlatform(from urlString: String) -> (name: String, icon: String?) {
-        let iconVariant = (colorScheme == .dark ? "_light" : "_dark")
-        
-        let platforms: [String: (name: String, iconName: String)] = [
-            "github.com": ("GitHub", "GitHub\(iconVariant)"),
-            "stackoverflow.com": ("Stack Overflow", "stackoverflowIcon"),
-            "twitter.com": ("Twitter", "twitterIcon"),
-            "facebook.com": ("Facebook", "facebookIcon"),
-            "linkedin.com": ("LinkedIn", "linkedinIcon"),
-            "instagram.com": ("Instagram", "instagramIcon"),
-            "youtube.com": ("YouTube", "youtubeIcon"),
-            "reddit.com": ("Reddit", "redditIcon")
+    private func getSocialPlatform(from urlString: String) -> (name: String, icon: String?, accent: Color?) {
+        let platforms: [String: (name: String, iconName: String, accent: Color)] = [
+            "github.com": ("GitHub", "github", Color.primary),
+            "stackoverflow.com": ("Stack Overflow", "stack-overflow", Color.orange),
+            "stackexchange.com": ("Stack Exchange", "stack-exchange", Color.lightBlue),
+            "twitter.com": ("X", "x-twitter", Color.primary),
+            "x.com": ("X", "x-twitter", Color.primary),
+            "facebook.com": ("Facebook", "facebook", Color.blue),
+            "linkedin.com": ("LinkedIn", "linkedin", Color.lightBlue),
+            "instagram.com": ("Instagram", "instagram", Color.red),
+            "youtube.com": ("YouTube", "youtube", Color.red),
+            "reddit.com": ("Reddit", "reddit", Color.red)
         ]
         
         // TODO: add a check when urls are added to remove https
-        let urlString = "https://" + urlString
-        guard let url = URL(string: urlString),
+        guard let url = URL(string: "https://" + urlString),
               let host = url.host?.lowercased() else {
-            return (name: urlString, icon: nil)
+            return (name: urlString, icon: nil, accent: nil)
         }
         
         // Find the platform matching the host
         for (domain, platform) in platforms {
             if host.contains(domain) {
-                return (name: platform.name, icon: platform.iconName)
+                return (name: platform.name, icon: platform.iconName, accent: platform.accent)
             }
         }
         
-        return (name: urlString, icon: nil)
+        return (name: urlString, icon: nil, accent: nil)
     }
     private func switchView(to view: ViewSelection = .profile) {
         withAnimation(animation) {
-            showScreen = false
+            userViewModel.showScreen = false
+            viewTitle = (view == .profile ? "My Profile" : view.rawValue)
         }
         wait(for: 0.9) {
             currentScreen = view
             withAnimation(animation) {
-                showScreen = true
+                userViewModel.showScreen = true
                 hasCompletedInitalAnimation = true
             }
         }
@@ -231,15 +181,21 @@ struct ProfileView: View {
             switch currentScreen {
             case .profile:
                 profile
-                    .scaleEffect(showScreen ? 1 : 1.1)
+                    .scaleEffect(userViewModel.showScreen ? 1 : 1.1)
             case .bio:
                 addBio
             default:
-                EmptyView()
+                Button("Back") {
+                    switchView()
+                }
             }
         }
-        .disabled(!showScreen)
-        .opacity(showScreen ? 1 : 0)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .navigationTitle(viewTitle)
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(isShared())
+        .disabled(!userViewModel.showScreen)
+        .opacity(userViewModel.showScreen ? 1 : 0)
         .onAppear {
             switchView()
         }
@@ -254,62 +210,104 @@ struct ProfileView: View {
                             .padding(9)
                             .padding(.horizontal, 3)
                             .font(.system(size: 14).weight(.medium))
-                            .background {
+                            .overlay {
                                 Capsule()
                                     .stroke(Color.primary, lineWidth: 2)
                             }
                     }
                     VStack(spacing: 14) {
-                        let size = min(200, geo.size.width / 2.8)
+                        let size = min(200, geo.size.width / 2.6)
                         
-                        if let avatarURL = user.avatarURL, let url = URL(
-                            string: avatarURL
-                        ) {
-                            KFImage(url)
-                                .placeholder { _ in
-                                    placeholderAvatar(width: size)
-                                        .overlay {
-                                            ProgressView()
-                                                .tint(.white)
+                        if user.avatarURL != nil || userViewModel.selectedImage != nil {
+                            ZStack(alignment: .bottom) {
+                                if let avatar = userViewModel.getAvatar(), !isShared() {
+                                    Image(uiImage: avatar)
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fill)
+                                        .frame(width: size, height: size)
+                                        .clipShape(Circle())
+                                } else if let avatarURL = user.avatarURL, let url = URL(
+                                    string: avatarURL
+                                ) {
+                                    KFImage(url)
+                                        .placeholder { _ in
+                                            placeholderAvatar(width: size)
+                                                .overlay {
+                                                    ProgressView()
+                                                        .tint(.white)
+                                                }
                                         }
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fill)
+                                        .frame(width: size, height: size)
+                                        .clipped()
+                                        .clipShape(Circle())
                                 }
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                                .frame(width: size)
-                                .clipShape(Circle())
-                        } else {
+                                HStack(spacing: 8) {
+                                    Button {
+                                        showAvatarPicker = true
+                                    } label: {
+                                        HStack(spacing: 7) {
+                                            if userViewModel.selectedImage == nil {
+                                                Image(systemName: "arrow.uturn.backward")
+                                                Text("Replace")
+                                            } else {
+                                                ProgressView()
+                                                    .scaleEffect(0.8)
+                                            }
+                                        }
+                                        .padding(userViewModel.selectedImage == nil ? 9 : 6)
+                                        .padding(.horizontal, userViewModel.selectedImage == nil ? 3 : 0)
+                                        .font(.system(size: 14.5).weight(.medium))
+                                        .foregroundStyle(Color(.lightGray))
+                                        .background(Material.regular)
+                                        .clipShape(Capsule())
+                                    }
+                                    if user.avatarURL != nil {
+                                        Button {
+                                            // TODO: show confirmation dialog or alert
+                                            userViewModel.removeAvatar(user)
+                                        } label: {
+                                            FAText("trash-can", size: 16)
+                                                .padding(9)
+                                                .font(.system(size: 15).weight(.medium))
+                                                .foregroundStyle(.red)
+                                                .background(Material.regular)
+                                                .clipShape(Capsule())
+                                        }
+                                    }
+                                }
+                                .offset(y: 12)
+                            }
+                            .transition(.opacity.combined(with: .slide))
+                            .animation(.smooth, value: userViewModel.selectedImage)
+                        } else if !isShared() {
                             Button {
-                                showProfileImagePicker = true
+                                showAvatarPicker = true
+                                // TODO: add import from other platforms
                             } label: {
                                 placeholderAvatar(width: size)
                                     .overlay {
-                                        if profileImage != nil {
-                                            ProgressView()
-                                                .tint(.white)
-                                        } else if !isShared() {
-                                            VStack(spacing: 7) {
-                                                FAText(iconName: "camera", size: 28)
-                                                Text("Add Photo")
-                                                    .font(
-                                                        .system(size: 17)
-                                                        .weight(.medium)
-                                                    )
-                                            }
-                                            .foregroundStyle(.gray.opacity(0.9))
+                                        VStack(spacing: 7) {
+                                            FAText("camera", size: 28)
+                                            Text("Add Photo")
+                                                .font(
+                                                    .system(size: 17)
+                                                    .weight(.medium)
+                                                )
                                         }
+                                        .foregroundStyle(.gray.opacity(0.9))
                                     }
                             }
-                            .disabled(isShared())
                             .frame(width: size, height: size)
-                            .sheet(isPresented: $showProfileImagePicker, onDismiss: {
-                                if let profileImage {
-                                    userViewModel.uploadProfileImage(image: profileImage)
-                                }
-                            }) {
-                                ImagePicker(selectedImage: $profileImage)
-                            }
                         }
-                        VStack(spacing: 5) {
+                    }
+                    .sheet(isPresented: $showAvatarPicker, onDismiss: {
+                        userViewModel.uploadAvatar(user)
+                    }) {
+                        ImagePicker(selectedImage: $userViewModel.selectedImage)
+                    }
+                    VStack(spacing: 5) {
                             HStack(spacing: 12) {
                                 Text({
                                     if let firstname = user.firstname, let lastname = user.lastname {
@@ -347,13 +345,13 @@ struct ProfileView: View {
                                                 .font(.system(size: 24))
                                             Image(systemName: "plus")
                                                 .font(.system(size: 16).weight(.medium))
-                                                .padding(3)
+                                                .padding(4)
                                                 .foregroundStyle(.white)
                                                 .background(Color.blue)
                                                 .clipShape(Circle())
                                                 .overlay {
                                                     Circle()
-                                                        .stroke(Color(.systemBackground), lineWidth: 5)
+                                                        .stroke(Color(.systemBackground), lineWidth: 2)
                                                 }
                                                 .offset(x: 9, y: 12)
                                         }
@@ -366,10 +364,9 @@ struct ProfileView: View {
                                     .foregroundStyle(.gray)
                             }
                         }
-                    }
                     HStack(spacing: 12) {
                         if let phoneNumbers = user.phoneNumbers, !phoneNumbers.isEmpty {
-                            let label = FAText(iconName: "phone", size: 23)
+                            let label = FAText("phone", size: 23)
                             
                             if phoneNumbers.count > 1 {
                                 Menu {
@@ -395,7 +392,7 @@ struct ProfileView: View {
                             }
                         }
                         if let emails = user.emails, !emails.isEmpty {
-                            let label = FAText(iconName: "envelope", size: 23)
+                            let label = FAText("envelope", size: 23)
                             
                             if emails.count > 1 {
                                 Menu {
@@ -415,7 +412,7 @@ struct ProfileView: View {
                             ShareLink(item: url) {
                                 ContactRowView {
                                     HStack {
-                                        FAText(iconName: "share", size: 23)
+                                        FAText("share", size: 23)
                                         if user.emails == nil && user.phoneNumbers == nil { // Show an expanded version if there aren't any sister buttons
                                             Text("Share my profile")
                                                 .font(.body.weight(.medium))
@@ -447,7 +444,7 @@ struct ProfileView: View {
                                         haptic(style: .light)
                                         switchView(to: .bio)
                                     } label: {
-                                        FAText(iconName: "pen", size: 16)
+                                        FAText("pen", size: 16)
                                             .padding(9)
                                             .foregroundStyle(Color.white)
                                             .background(Color.blue)
@@ -468,29 +465,21 @@ struct ProfileView: View {
                                         let platform = getSocialPlatform(from: link)
 
                                         Button {
-                                            guard let url = URL(string: link) else { return }
+                                            guard let url = URL(string: "https://" + link) else { return }
                                             
-                                            haptic(style: .list)
-                                            UIApplication.shared.open(url)
+                                            haptic(style: .light)
+                                            openURL(url)
                                         } label: {
                                             HStack(spacing: 10) {
-                                                Group {
-                                                    if let icon = platform.icon {
-                                                        Image(icon)
-                                                            .resizable()
-                                                            .scaledToFit()
-                                                    } else {
-                                                        FAText(iconName: "link", size: 18)
-                                                            .foregroundStyle(Color.primary)
-                                                    }
-                                                }
-                                                .frame(width: 35, height: 35)
-                                                .background(platform.icon == nil ? Color.gray.opacity(0.4) : .clear)
-                                                .clipShape(RoundedRectangle(cornerRadius: 20))
+                                                FAText(platform.icon ?? "link", size: 25)
+                                                    .foregroundStyle(platform.accent ?? Color.primary)
+                                                    .frame(maxHeight: 35)
+                                                    .background(platform.icon == nil ? Color.gray.opacity(0.4) : .clear)
+                                                    .clipShape(RoundedRectangle(cornerRadius: 20))
                                                 Text(platform.name)
                                                     .lineLimit(1)
                                                 Spacer()
-                                                FAText(iconName: "square-arrow-up-right", size: 17)
+                                                FAText("square-arrow-up-right", size: 17)
                                                     .foregroundStyle(.secondary)
                                             }
                                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -524,7 +513,6 @@ struct ProfileView: View {
                     }
                 }
                 .padding()
-                // TODO: test on iPad
                 .frame(maxWidth: 600)
                 .frame(maxWidth: .infinity)
             }
@@ -571,13 +559,13 @@ struct ContactActionButton: View {
     var body: some View {
         Menu(string) {
             Button {
-                haptic(style: .list)
+                haptic(style: .light)
                 UIPasteboard.general.string = string
             } label: {
                 Label("Copy", systemImage: "doc.on.clipboard")
             }
             Button {
-                haptic(style: .list)
+                haptic(style: .light)
                 executeSocial()
             } label: {
                 if type == .email {
