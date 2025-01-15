@@ -1,4 +1,4 @@
-# Welcome to Openavatar frontend for iOS
+# Welcome to the Openavatar frontend for iOS
 
 Openavatar is an open-source alternative to Gravatar, and products like it. This project was built for High Seas.
 
