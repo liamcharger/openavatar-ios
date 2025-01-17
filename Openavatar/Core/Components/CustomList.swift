@@ -19,9 +19,9 @@ struct CustomList<Content>: View where Content : View {
             content
         }
         .clipShape(RoundedRectangle(cornerRadius: 20))
-        .background {
+        .overlay {
             RoundedRectangle(cornerRadius: 20)
-                .stroke(Color(.lightGray).opacity(0.35), lineWidth: 1)
+                .stroke(Color(.lightGray).opacity(0.25), lineWidth: 1)
         }
     }
 }

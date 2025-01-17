@@ -62,30 +62,16 @@ struct OnboardingView: View {
     }
     private func backButton(backTo index: ViewSelection, ignoreReview: Bool = false) -> some View {
         Button {
-            if ignoreReview {
-                isReviewing = false
-            }
-            
-            if isReviewing {
-                switchView()
-            } else {
-                switchView(to: index)
-            }
+            back(backTo: index, ignoreReview: ignoreReview)
         } label: {
             Image(systemName: "arrow.left")
                 .frame(minHeight: 24)
         }
-        .buttonStyle(CustomButtonStyle(style: .compact))
+        .buttonStyle(CustomButtonStyle(style: .secondary))
     }
     private func nextButton(title: LocalizedStringKey, completion: (() -> Void)? = nil) -> some View {
         Button {
-            haptic(style: .heavy)
-            
-            if let completion {
-                completion()
-            } else {
-                switchView()
-            }
+            next(completion: completion)
         } label: {
             HStack {
                 Text(title)
@@ -102,7 +88,7 @@ struct OnboardingView: View {
             FAText(icon, size: 32)
                 .padding()
                 .background(accent == .primary ? .clear : accent.opacity(0.1))
-                .background {
+                .overlay {
                     RoundedRectangle(cornerRadius: 18)
                         .stroke(accent, lineWidth: 5)
                 }
@@ -139,6 +125,26 @@ struct OnboardingView: View {
             }
         }
     }
+    private func back(backTo index: ViewSelection, ignoreReview: Bool = false) {
+        if ignoreReview {
+            isReviewing = false
+        }
+        
+        if isReviewing {
+            switchView()
+        } else {
+            switchView(to: index)
+        }
+    }
+    private func next(completion: (() -> Void)? = nil) {
+        haptic(style: .heavy)
+        
+        if let completion {
+            completion()
+        } else {
+            switchView()
+        }
+    }
     private func switchView(to index: ViewSelection? = nil) {
         guard currentView.rawValue <= ViewSelection.loading.rawValue else { return }
         
@@ -170,7 +176,12 @@ struct OnboardingView: View {
             case .name: nameView
             case .email: emailView
             case .password: passwordView
-            case .bio:  bioView
+            case .bio:
+                AddBioView {
+                    back(backTo: .password)
+                } next: {
+                    next()
+                }
             case .review: review
             case .loading: LoadingView()
             }
@@ -362,32 +373,6 @@ struct OnboardingView: View {
         }
         .animation(.smooth, value: canSubmit)
         .animation(.smooth, value: doPasswordsMatch)
-    }
-    
-    var bioView: some View {
-        let bioEmpty = bio.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        
-        return VStack(spacing: 20) {
-            header(icon: "file-lines", title: "Add a bio?")
-            TextEditor(text: $bio)
-                .textFieldStyle(.plain)
-                .font(.title3)
-                .padding(12)
-                .background {
-                    RoundedRectangle(cornerRadius: 10)
-                        .stroke(Material.regular, lineWidth: 4)
-                }
-                .focused($isBioFocused)
-            HStack {
-                backButton(backTo: .password)
-                nextButton(title: bioEmpty ? "I'll add one later" : "I'm done with my bio!")
-                    .animation(.smooth, value: bio)
-            }
-            .frame(maxWidth: .infinity)
-        }
-        .onAppear {
-            isBioFocused = true
-        }
     }
     
     var review: some View {

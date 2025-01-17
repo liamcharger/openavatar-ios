@@ -10,6 +10,9 @@
     "Add Photo" : {
 
     },
+    "Are you sure you want to delete your current avatar?" : {
+
+    },
     "Back" : {
 
     },
@@ -17,6 +20,9 @@
 
     },
     "Call" : {
+
+    },
+    "Cancel" : {
 
     },
     "Confirm Password" : {
@@ -35,6 +41,12 @@
 
     },
     "Create my account!" : {
+
+    },
+    "Delete" : {
+
+    },
+    "Delete Avatar" : {
 
     },
     "Email" : {
@@ -82,9 +94,6 @@
     "My email is correct!" : {
 
     },
-    "My Profile" : {
-
-    },
     "My username is ready!" : {
 
     },
@@ -113,6 +122,12 @@
 
     },
     "Review your information" : {
+
+    },
+    "Save" : {
+
+    },
+    "Save my bio" : {
 
     },
     "Send Email" : {
@@ -149,9 +164,6 @@
 
     },
     "Time to login!" : {
-
-    },
-    "Update Bio" : {
 
     },
     "Welcome to Openavatar!" : {

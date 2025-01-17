@@ -26,6 +26,17 @@ class UserViewModel: ObservableObject {
         return Auth.auth().currentUser?.uid ?? ""
     }
     
+    func isShared(_ user: User) -> Bool {
+#if DEBUG
+        return false
+#else
+        if uid == user.id {
+            return false
+        }
+        return true
+#endif
+    }
+    
     private func error(_ error: Error) {
         showError = true
         errorMessage = error.localizedDescription
@@ -131,7 +142,7 @@ class UserViewModel: ObservableObject {
     
     func updateBio(_ bio: String) {
         Firestore.firestore().collection("users").document(uid)
-            .updateData(["bio": bio]) { error in
+            .updateData(["bio": bio.isEmpty ? FieldValue.delete() : bio]) { error in
                 if let error {
                     self.error(error)
                     return

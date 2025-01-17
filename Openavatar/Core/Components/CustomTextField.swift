@@ -38,9 +38,9 @@ struct CustomTextField: View {
             .padding(12)
             .background(Color.backgroundGray)
             .clipShape(RoundedRectangle(cornerRadius: 10))
-            .background {
+            .overlay {
                 RoundedRectangle(cornerRadius: 10)
-                    .stroke(Color(.lightGray), lineWidth: 1)
+                    .stroke(Color(.lightGray).opacity(0.25), lineWidth: 1)
             }
             .autocorrectionDisabled()
     }

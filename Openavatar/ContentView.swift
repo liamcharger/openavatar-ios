@@ -12,18 +12,15 @@ struct ContentView: View {
     @ObservedObject var userViewModel = UserViewModel.shared
     
     var body: some View {
-        NavigationView {
-            if authViewModel.isLoading || userViewModel.isLoading {
-                LoadingView()
-            } else if authViewModel.userSession == nil {
-                OnboardingView()
-            } else if let user = userViewModel.fetchedUser {
-                ProfileView(user)
-            } else if let currentUser = authViewModel.currentUser {
-                ProfileView(currentUser)
-            }
+        if authViewModel.isLoading || userViewModel.isLoading {
+            LoadingView()
+        } else if authViewModel.userSession == nil {
+            OnboardingView()
+        } else if let user = userViewModel.fetchedUser {
+            ProfileView(user)
+        } else if let currentUser = authViewModel.currentUser {
+            ProfileView(currentUser)
         }
-        .navigationViewStyle(.stack)
     }
 }
 
