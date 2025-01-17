@@ -10,8 +10,6 @@ import SwiftUI
 struct AddBioView: View {
     @ObservedObject var userViewModel = UserViewModel.shared
     
-    @State private var bio = ""
-    
     @FocusState private var isBioFocused: Bool
     
     private let back: () -> Void
@@ -19,7 +17,7 @@ struct AddBioView: View {
     private let onboarding: Bool
     
     private var bioEmpty: Bool {
-        bio.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        userViewModel.bio.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
     
     init(onboarding: Bool = true, back: @escaping() -> Void, next: @escaping() -> Void) {
@@ -42,7 +40,7 @@ struct AddBioView: View {
                     .font(.system(size: 28, design: .monospaced).weight(.bold))
             }
             .multilineTextAlignment(.center)
-            TextEditor(text: $bio)
+            TextEditor(text: $userViewModel.bio)
                 .textFieldStyle(.plain)
                 .font(.title3)
                 .padding(12)
@@ -59,15 +57,19 @@ struct AddBioView: View {
                         .frame(minHeight: 24)
                 }
                 .buttonStyle(CustomButtonStyle(style: .secondary))
-                if !bioEmpty {
-                    Button(onboarding ? (bioEmpty ? "I'll add one later" : "I'm done with my bio!") : "Save my bio") {
-                        next()
-                    }
-                    .buttonStyle(CustomButtonStyle())
-                    .transition(.move(edge: .trailing).combined(with: .opacity))
+                let saveButton = Button(onboarding ? (bioEmpty ? "I'll add one later" : "I'm done with my bio!") : "Save my bio") {
+                    next()
+                }
+                .buttonStyle(CustomButtonStyle())
+                .transition(.move(edge: .trailing).combined(with: .opacity))
+                
+                if onboarding {
+                    saveButton
+                } else if !bioEmpty {
+                    saveButton
                 }
             }
-            .animation(.smooth, value: bio)
+            .animation(.smooth, value: userViewModel.bio)
             .frame(maxWidth: .infinity)
         }
         .padding()

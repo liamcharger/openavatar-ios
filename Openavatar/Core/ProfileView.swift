@@ -30,8 +30,6 @@ struct ProfileView: View {
     @State private var showAvatarPicker = false
     @State private var isEditingBio = false
     
-    @State private var bio = ""
-    
     @State private var currentScreen: ViewSelection = .profile
     
     @FocusState private var isBioFocused: Bool
@@ -175,7 +173,7 @@ struct ProfileView: View {
                 AddBioView(onboarding: false) {
                     switchView()
                 } next: {
-                    userViewModel.updateBio(bio)
+                    userViewModel.updateBio()
                     switchView()
                 }
             default:
@@ -209,100 +207,86 @@ struct ProfileView: View {
                     }
                     AvatarView(user: user, geo: geo)
                     VStack(spacing: 5) {
-                            HStack(spacing: 12) {
-                                Text({
-                                    if let firstname = user.firstname, let lastname = user.lastname {
-                                        return "\(firstname) \(lastname)"
-                                    } else {
-                                        return user.nickname
+                        HStack(spacing: 12) {
+                            Text({
+                                if let firstname = user.firstname, let lastname = user.lastname {
+                                    return "\(firstname) \(lastname)"
+                                } else {
+                                    return user.nickname
+                                }
+                            }())
+                            .font(
+                                .system(size: 28, design: .monospaced)
+                                .weight(.bold)
+                            )
+                            if let pronunciation = user.pronunciation {
+                                Button {
+                                    showPronunciation = true
+                                } label: {
+                                    Image(systemName: "person.wave.2.fill")
+                                        .font(.system(size: 24))
+                                }
+                                .popover(isPresented: $showPronunciation) {
+                                    VStack {
+                                        Text(pronunciation)
+                                            .padding(.horizontal)
                                     }
-                                }())
-                                .font(
-                                    .system(size: 28, design: .monospaced)
-                                    .weight(.bold)
-                                )
-                                if let pronunciation = user.pronunciation {
-                                    Button {
-                                        showPronunciation = true
-                                    } label: {
+                                    .presentationCompactAdaptation(.popover)
+                                }
+                            } else if !userViewModel.isShared(user) {
+                                Button {
+                                    haptic(style: .light)
+                                    switchView(to: .pronunciation)
+                                    showPronunciation = true
+                                } label: {
+                                    ZStack(alignment: .bottomTrailing) {
                                         Image(systemName: "person.wave.2.fill")
                                             .font(.system(size: 24))
-                                    }
-                                    .popover(isPresented: $showPronunciation) {
-                                        VStack {
-                                            Text(pronunciation)
-                                                .padding(.horizontal)
-                                        }
-                                        .presentationCompactAdaptation(.popover)
-                                    }
-                                } else if !userViewModel.isShared(user) {
-                                    Button {
-                                        haptic(style: .light)
-                                        switchView(to: .pronunciation)
-                                        showPronunciation = true
-                                    } label: {
-                                        ZStack(alignment: .bottomTrailing) {
-                                            Image(systemName: "person.wave.2.fill")
-                                                .font(.system(size: 24))
-                                            Image(systemName: "plus")
-                                                .font(.system(size: 16).weight(.medium))
-                                                .padding(4)
-                                                .foregroundStyle(.white)
-                                                .background(Color.blue)
-                                                .clipShape(Circle())
-                                                .overlay {
-                                                    Circle()
-                                                        .stroke(Color(.systemBackground), lineWidth: 2)
-                                                }
-                                                .offset(x: 9, y: 12)
-                                        }
+                                        Image(systemName: "plus")
+                                            .font(.system(size: 16).weight(.medium))
+                                            .padding(4)
+                                            .foregroundStyle(.white)
+                                            .background(Color.blue)
+                                            .clipShape(Circle())
+                                            .overlay {
+                                                Circle()
+                                                    .stroke(Color(.systemBackground), lineWidth: 2)
+                                            }
+                                            .offset(x: 9, y: 12)
                                     }
                                 }
-                            }
-                            if let subtitle {
-                                Text(subtitle)
-                                    .font(.system(size: 20.5))
-                                    .foregroundStyle(.gray)
                             }
                         }
+                        if let subtitle {
+                            Text(subtitle)
+                                .font(.system(size: 20.5))
+                                .foregroundStyle(.gray)
+                        }
+                    }
                     HStack(spacing: 12) {
                         if let phoneNumbers = user.phoneNumbers, !phoneNumbers.isEmpty {
-                            if phoneNumbers.count > 1 {
-                                Menu {
-                                    ForEach(
-                                        phoneNumbers,
-                                        id: \.self
-                                    ) { phoneNumber in
-                                        ContactActionButton(
-                                            phoneNumber,
-                                            type: .phoneNumber
-                                        )
-                                    }
-                                } label: {
-                                    ContactRowView {
-                                        FAText("phone", size: 23)
-                                    }
+                           Menu {
+                                ForEach(
+                                    phoneNumbers,
+                                    id: \.self
+                                ) { phoneNumber in
+                                    ContactActionButton(phoneNumber, type: .phoneNumber)
                                 }
-                            } else if let phoneNumber = phoneNumbers.first {
-                                ContactActionButton(
-                                    phoneNumber,
-                                    type: .phoneNumber
-                                )
+                            } label: {
+                                ContactRowView {
+                                    FAText("phone", size: 23)
+                                }
                             }
                         }
                         if let emails = user.emails, !emails.isEmpty {
-                            if emails.count > 1 {
-                                Menu {
-                                    ForEach(emails, id: \.self) { email in
-                                        ContactActionButton(email, type: .email)
-                                    }
-                                } label: {
-                                    ContactRowView {
-                                        FAText("envelope", size: 23)
-                                    }
+                            Menu {
+                                ForEach(emails, id: \.self) { email in
+                                    ContactActionButton(email, type: .email)
                                 }
-                            } else if let email = emails.first {
-                                ContactActionButton(email, type: .email)
+                            } label: {
+                                ContactRowView {
+                                    FAText("envelope", size: 23)
+                                }
                             }
                         }
                         if let url = URL(string: "https://openavatar.web.app/profile/\(user.uid)") {
@@ -331,7 +315,7 @@ struct ProfileView: View {
                                     ForEach(links.indices, id: \.self) { index in
                                         let link = links[index]
                                         let platform = getSocialPlatform(from: link)
-
+                                        
                                         Button {
                                             guard let url = URL(string: "https://" + link) else { return }
                                             
@@ -378,6 +362,25 @@ struct ProfileView: View {
                                 elementPrompt(for: .links)
                             }
                         }
+                        if !userViewModel.isShared(user) {
+                            VStack {
+                                // TODO: add settings button
+                                Button {
+                                    AuthViewModel.shared.signOut()
+                                } label: {
+                                    HStack(spacing: 7) {
+                                        FAText("arrow-right-from-bracket")
+                                        Text("Sign Out")
+                                    }
+                                    .padding(11)
+                                    .padding(.horizontal, 3)
+                                    .font(.system(size: 15.5).weight(.medium))
+                                    .foregroundStyle(.red)
+                                    .background(Material.regular)
+                                    .clipShape(Capsule())
+                                }
+                            }
+                        }
                     }
                 }
                 .padding()
@@ -394,7 +397,7 @@ struct ProfileView: View {
                 ZStack(alignment: .topTrailing) {
                     Group {
                         if isEditingBio {
-                            TextEditor(text: $bio)
+                            TextEditor(text: $userViewModel.bio)
                                 .focused($isBioFocused)
                                 .frame(minHeight: 120)
                                 .padding(7)
@@ -419,7 +422,6 @@ struct ProfileView: View {
                         Button {
                             haptic(style: .light)
                             
-                            self.bio = bio
                             self.isBioFocused = true
                             self.isEditingBio = true
                         } label: {
@@ -435,7 +437,7 @@ struct ProfileView: View {
                 if isEditingBio {
                     HStack {
                         Button("Save") {
-                            userViewModel.updateBio(self.bio)
+                            userViewModel.updateBio()
                             isBioFocused = false
                             isEditingBio = false
                         }

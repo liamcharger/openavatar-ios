@@ -19,6 +19,7 @@ class AuthViewModel: ObservableObject {
     @Published var isLoading = true
     
     private var tempUserSession: FirebaseAuth.User?
+    private let userViewModel = UserViewModel.shared
     
     static let shared = AuthViewModel()
     
@@ -44,7 +45,9 @@ class AuthViewModel: ObservableObject {
         }
     }
     
-    func register(firstname: String, lastname: String, email: String, nickname: String, bio: String, password: String, completion: @escaping(Error?) -> Void) {
+    func register(firstname: String, lastname: String, email: String, nickname: String, password: String, completion: @escaping(Error?) -> Void) {
+        let bio = userViewModel.bio
+        
         isLoading = true
         
         Auth.auth().createUser(withEmail: email, password: password) { result, error in
@@ -101,7 +104,12 @@ class AuthViewModel: ObservableObject {
     }
     
     func signOut() {
+        if let currentUser {
+            userViewModel.removeAvatar(currentUser)
+        }
+        
         self.userSession = nil
+        
         try? Auth.auth().signOut()
     }
     

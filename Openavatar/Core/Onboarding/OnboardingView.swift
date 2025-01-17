@@ -444,7 +444,7 @@ struct OnboardingView: View {
             HStack {
                 backButton(backTo: .welcome, ignoreReview: true)
                 nextButton(title: "Create my account!", completion: {
-                    authViewModel.register(firstname: firstName.capitalized, lastname: lastName.capitalized, email: email, nickname: nickname, bio: bio, password: password) { error in
+                    authViewModel.register(firstname: firstName.capitalized, lastname: lastName.capitalized, email: email, nickname: nickname, password: password) { error in
                         if let error {
                             self.error = error.localizedDescription
                             self.showError = true

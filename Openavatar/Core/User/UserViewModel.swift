@@ -21,6 +21,7 @@ class UserViewModel: ObservableObject {
     @Published var selectedImage: UIImage?
     
     @Published var errorMessage = ""
+    @Published var bio = ""
     
     var uid: String {
         return Auth.auth().currentUser?.uid ?? ""
@@ -52,6 +53,7 @@ class UserViewModel: ObservableObject {
                 guard let user = try? snapshot.data(as: User.self) else { return }
                 
                 self.fetchedUser = user
+                self.bio = user.bio ?? ""
                 self.isLoading = false
             }
     }
@@ -140,7 +142,7 @@ class UserViewModel: ObservableObject {
         }
     }
     
-    func updateBio(_ bio: String) {
+    func updateBio() {
         Firestore.firestore().collection("users").document(uid)
             .updateData(["bio": bio.isEmpty ? FieldValue.delete() : bio]) { error in
                 if let error {
