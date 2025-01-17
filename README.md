@@ -1,11 +1,11 @@
-# Welcome to OpenID
+# Welcome to the Openavatar frontend for iOS
 
-OpenID is an open-source alternative to Gravatar, and products like it. This project was built for High Seas.
+Openavatar is an open-source alternative to Gravatar, and products like it. This project was built for High Seas.
 
 > [!IMPORTANT]  
 > This project is in *very* early stages.
 
-Since this project uses Firebase, you'll need to add a GoogleService-Info.plist to the project directory before running the app. You can get this file by creating a new Firebase project at [the Firebase Console](https://console.firebase.google.com) and adding an iOS app to it.
+Since this project uses currently Firebase, you'll need to add a GoogleService-Info.plist to the project directory before running the app. You can get this file by creating a new Firebase project at [the Firebase Console](https://console.firebase.google.com) and adding an iOS app to it.
 
 ## In progress/todo:
 - Add profile image and banner image uploads—Firebase Storage will be used to achieve this.
