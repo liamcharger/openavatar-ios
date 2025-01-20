@@ -7,6 +7,12 @@
     "Add a bio?" : {
 
     },
+    "Add a Phone Number" : {
+
+    },
+    "Add an Email" : {
+
+    },
     "Add Photo" : {
 
     },
@@ -16,7 +22,7 @@
     "Back" : {
 
     },
-    "Bio" : {
+    "Back to My Profile" : {
 
     },
     "Call" : {
@@ -26,9 +32,6 @@
 
     },
     "Confirm Password" : {
-
-    },
-    "Contact Info" : {
 
     },
     "Continue!" : {
@@ -49,7 +52,13 @@
     "Delete Avatar" : {
 
     },
+    "Edit" : {
+
+    },
     "Email" : {
+
+    },
+    "Enter your email." : {
 
     },
     "First" : {
@@ -76,13 +85,7 @@
     "I've entered my password!" : {
 
     },
-    "Job" : {
-
-    },
     "Last" : {
-
-    },
-    "Loading" : {
 
     },
     "Loading things up..." : {
@@ -97,9 +100,6 @@
     "My username is ready!" : {
 
     },
-    "Name" : {
-
-    },
     "Nickname" : {
 
     },
@@ -109,13 +109,7 @@
     "Password" : {
 
     },
-    "profile" : {
-
-    },
-    "Pronouns" : {
-
-    },
-    "Pronunciation" : {
+    "Remove" : {
 
     },
     "Replace" : {
@@ -127,7 +121,7 @@
     "Save" : {
 
     },
-    "Save my bio" : {
+    "Save my bio!" : {
 
     },
     "Send Email" : {
@@ -136,13 +130,10 @@
     "Share my profile" : {
 
     },
-    "Shared to You" : {
-
-    },
     "Sign Out" : {
 
     },
-    "Social Accounts" : {
+    "Stop Editing" : {
 
     },
     "Talking to servers..." : {

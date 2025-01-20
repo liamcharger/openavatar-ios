@@ -9,15 +9,17 @@ import SwiftUI
 import Kingfisher
 
 struct ProfileView: View {
-    private enum ViewSelection: LocalizedStringKey, CaseIterable {
+    private enum ViewSelection {
         case profile
-        case name = "Name"
-        case bio = "Bio"
-        case contactInfo = "Contact Info"
-        case links = "Social Accounts"
-        case pronunciation = "Pronunciation"
-        case pronouns = "Pronouns"
-        case job = "Job"
+        case name
+        case bio
+        case contactInfo
+        case socialAccounts
+        case pronunciation
+        case pronouns
+        case job
+        case phoneNumber
+        case email
     }
     
     @Environment(\.openURL) var openURL
@@ -30,18 +32,13 @@ struct ProfileView: View {
     @State private var showAvatarPicker = false
     @State private var isEditingBio = false
     
+    @State private var email = "" // Should this be in the view model?
+    
     @State private var currentScreen: ViewSelection = .profile
     
     @FocusState private var isBioFocused: Bool
     
     private let animation = Animation.smooth(duration: 0.9)
-    private var shouldHideNavigationBar: Bool {
-        let isShared = !userViewModel.isShared(user)
-        let isNotProfile = currentScreen != .profile
-        let isScreenHidden = userViewModel.showScreen
-        
-        return isShared && isNotProfile && isScreenHidden
-    }
     
     let user: User
     
@@ -68,53 +65,72 @@ struct ProfileView: View {
     }
     
     private func elementPrompt(for element: ViewSelection) -> some View {
-        Group {
-            // We don't want to show any prompts if the profile has been shared
-            if !userViewModel.isShared(user) {
-                Button {
-                    haptic(style: .medium)
-                    switchView(to: element)
-                } label: {
-                    HStack(spacing: 10) {
-                        Image(systemName: "plus")
-                            .font(.body.weight(.medium))
-                            .padding(10)
-                            .foregroundStyle(.white)
-                            .background(Color.lightBlue)
-                            .clipShape(Circle())
-                        Text({
-                            var body = "Add "
-                            
-                            switch element {
-                            case .name:
-                                body += "a name"
-                            case .pronouns:
-                                body += "your pronouns"
-                            case .job:
-                                body += "a job"
-                            case .bio:
-                                body += "a bio"
-                            case .contactInfo:
-                                body += "an email or phone number"
-                            default:
-                                body += "social links"
-                            }
-                            
-                            return body
-                        }())
-                        Spacer()
-                    }
+        let label = HStack(spacing: 10) {
+            Image(systemName: "plus")
+                .font(.body.weight(.medium))
+                .padding(10)
+                .foregroundStyle(.white)
+                .background(Color.lightBlue)
+                .clipShape(Circle())
+            Text({
+                var body = "Add "
+                
+                switch element {
+                case .name:
+                    body += "a name"
+                case .pronouns:
+                    body += "your pronouns"
+                case .job:
+                    body += "a job"
+                case .bio:
+                    body += "a bio"
+                case .contactInfo:
+                    body += "an email or phone number"
+                default:
+                    body += "a social account"
                 }
-                .buttonStyle(ListButtonStyle())
-                .clipShape(RoundedRectangle(cornerRadius: 20))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 20)
-                        .stroke(Color(.lightGray).opacity(0.25), lineWidth: 1)
+                
+                return body
+            }())
+            Spacer()
+        }
+        
+        return Group {
+            // We don't want to show any prompts if the profile has been shared
+            if userViewModel.isEditing {
+                if element != .contactInfo {
+                    Button {
+                        haptic(style: .medium)
+                        switchView(to: element)
+                    } label: {
+                        label
+                    }
+                    .buttonStyle(ListButtonStyle())
+                    .backgroundBorder()
+                } else {
+                    Menu {
+                        Button {
+                            haptic(style: .medium)
+                            switchView(to: .phoneNumber)
+                        } label: {
+                            Label("Add a Phone Number", systemImage: "plus")
+                        }
+                        Button {
+                            haptic(style: .medium)
+                            switchView(to: .email)
+                        } label: {
+                            Label("Add an Email", systemImage: "plus")
+                        }
+                    } label: {
+                        label
+                    }
+                    .buttonStyle(ListButtonStyle())
+                    .backgroundBorder()
                 }
             }
         }
     }
-    private func getSocialPlatform(from urlString: String) -> (name: String, icon: String?, accent: Color?) {
+    private func getSocialPlatform(from urlString: String) -> (name: String, icon: String, accent: Color) {
         let platforms: [String: (name: String, iconName: String, accent: Color)] = [
             "github.com": ("GitHub", "github", Color.primary),
             "stackoverflow.com": ("Stack Overflow", "stack-overflow", Color.orange),
@@ -131,7 +147,7 @@ struct ProfileView: View {
         // TODO: add a check when urls are added to remove https
         guard let url = URL(string: "https://" + urlString),
               let host = url.host?.lowercased() else {
-            return (name: urlString, icon: nil, accent: nil)
+            return (name: urlString, icon: "globe", accent: Color.primary)
         }
         
         // Find the platform matching the host
@@ -141,13 +157,18 @@ struct ProfileView: View {
             }
         }
         
-        return (name: urlString, icon: nil, accent: nil)
+        return (name: urlString, icon: "globe", accent: Color.primary)
     }
     private func switchView(to view: ViewSelection = .profile) {
-        withAnimation(animation) {
-            userViewModel.showScreen = false
+        if userViewModel.fetchedUser == nil {
+            withAnimation(animation) {
+                userViewModel.showScreen = false
+            }
         }
-        wait(for: 0.9) {
+        wait(for: userViewModel.fetchedUser == nil ? 0.91 : 0) {
+            // Reset necessary state variables
+            email = ""
+            
             currentScreen = view
             withAnimation(animation) {
                 userViewModel.showScreen = true
@@ -170,12 +191,21 @@ struct ProfileView: View {
             case .profile:
                 profile
             case .bio:
-                AddBioView(onboarding: false) {
+                AddBioView {
                     switchView()
                 } next: {
                     userViewModel.updateBio()
                     switchView()
                 }
+                .padding()
+            case .email:
+                AddEmailView(email: $email) {
+                    switchView()
+                } save: {
+                    userViewModel.addEmail(email)
+                    switchView()
+                }
+                .padding()
             default:
                 Button("Back") {
                     switchView()
@@ -195,18 +225,47 @@ struct ProfileView: View {
         GeometryReader { geo in
             ScrollView {
                 VStack(spacing: 30) {
-                    if userViewModel.isShared(user) {
-                        Text("Shared to You")
-                            .padding(9)
-                            .padding(.horizontal, 3)
-                            .font(.system(size: 14).weight(.medium))
-                            .overlay {
-                                Capsule()
-                                    .stroke(Color.primary, lineWidth: 2)
+                    HStack(spacing: 8) {
+                        if !userViewModel.isShared(user) {
+                            Button {
+                                withAnimation(.smooth) {
+                                    userViewModel.isEditing.toggle()
+                                }
+                            } label: {
+                                HStack(spacing: 9) {
+                                    FAText("pen")
+                                    Text(userViewModel.isEditing ? "Stop Editing" : "Edit")
+                                }
+                                .foregroundStyle(Color.accentColor)
                             }
+                            .buttonStyle(SecondaryActionButtonStyle())
+                        } else {
+                            Button {
+                                switchView(to: .profile) // This creates the animation
+                                wait(for: 0.91) {
+                                    userViewModel.fetchedUser = nil
+                                }
+                            } label: {
+                                HStack(spacing: 9) {
+                                    FAText("arrow-left")
+                                    Text("Back to My Profile")
+                                }
+                            }
+                            .buttonStyle(SecondaryActionButtonStyle())
+                        }
+                        Button {
+                            AuthViewModel.shared.signOut()
+                        } label: {
+                            HStack(spacing: 9) {
+                                FAText("arrow-right-from-bracket")
+                                Text("Sign Out")
+                            }
+                            .foregroundStyle(.red)
+                        }
+                        .buttonStyle(SecondaryActionButtonStyle())
                     }
                     AvatarView(user: user, geo: geo)
-                    VStack(spacing: 5) {
+                    VStack(spacing: 7) {
                         HStack(spacing: 12) {
                             Text({
                                 if let firstname = user.firstname, let lastname = user.lastname {
@@ -233,7 +292,7 @@ struct ProfileView: View {
                                     }
                                     .presentationCompactAdaptation(.popover)
                                 }
-                            } else if !userViewModel.isShared(user) {
+                            } else if userViewModel.isEditing {
                                 Button {
                                     haptic(style: .light)
                                     switchView(to: .pronunciation)
@@ -259,17 +318,14 @@ struct ProfileView: View {
                         }
                         if let subtitle {
                             Text(subtitle)
-                                .font(.system(size: 20.5))
                                 .foregroundStyle(.gray)
+                                .multilineTextAlignment(.center)
                         }
                     }
                     HStack(spacing: 12) {
                         if let phoneNumbers = user.phoneNumbers, !phoneNumbers.isEmpty {
-                           Menu {
-                                ForEach(
-                                    phoneNumbers,
-                                    id: \.self
-                                ) { phoneNumber in
+                            Menu {
+                                ForEach(phoneNumbers, id: \.self) { phoneNumber in
                                     ContactActionButton(phoneNumber, type: .phoneNumber)
                                 }
                             } label: {
@@ -290,16 +346,18 @@ struct ProfileView: View {
                             }
                         }
                         if let url = URL(string: "https://openavatar.web.app/profile/\(user.uid)") {
+                            let expanded = (user.emails == nil || (user.emails ?? []).isEmpty) && (user.phoneNumbers == nil || (user.phoneNumbers ?? []).isEmpty) // Show an expanded version if there aren't any sister buttons
+                            
                             ShareLink(item: url) {
                                 ContactRowView {
                                     HStack {
                                         FAText("share", size: 23)
-                                        if user.emails == nil && user.phoneNumbers == nil { // Show an expanded version if there aren't any sister buttons
+                                        if expanded {
                                             Text("Share my profile")
                                                 .font(.body.weight(.medium))
                                         }
                                     }
-                                    .padding(.horizontal)
+                                    .padding(.horizontal, expanded ? 16 : 0)
                                 }
                             }
                         }
@@ -323,22 +381,43 @@ struct ProfileView: View {
                                             openURL(url)
                                         } label: {
                                             HStack(spacing: 10) {
-                                                FAText(platform.icon ?? "link", size: 25)
-                                                    .foregroundStyle(platform.accent ?? Color.primary)
+                                                FAText(platform.icon, size: platform.icon == "globe" ? 22 : 25)
+                                                    .foregroundStyle(platform.accent)
                                                     .frame(maxHeight: 35)
-                                                    .background(platform.icon == nil ? Color.gray.opacity(0.4) : .clear)
-                                                    .clipShape(RoundedRectangle(cornerRadius: 20))
+                                                    .frame(minWidth: 30)
                                                 Text(platform.name)
                                                     .lineLimit(1)
                                                 Spacer()
-                                                FAText("square-arrow-up-right", size: 17)
-                                                    .foregroundStyle(.secondary)
+                                                if userViewModel.isEditing {
+                                                    Button {
+                                                        // TODO: add edit link logic
+                                                    } label: {
+                                                        FAText("pen", size: 16) // The pen icon appears bigger than the trash can, so keep it a little smaller
+                                                            .padding(10)
+                                                            .background(Color.blue)
+                                                            .foregroundStyle(.white)
+                                                            .clipShape(Circle())
+                                                    }
+                                                    Button(role: .destructive) {
+                                                        // TODO: add confirmation
+                                                        userViewModel.removeSocialLink(link)
+                                                    } label: {
+                                                        FAText("trash-can", size: 17)
+                                                            .padding(10)
+                                                            .background(Color.red)
+                                                            .foregroundStyle(.white)
+                                                            .clipShape(Circle())
+                                                    }
+                                                } else {
+                                                    FAText("square-arrow-up-right", size: 17)
+                                                        .foregroundStyle(.secondary)
+                                                }
                                             }
-                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                            .frame(maxWidth: .infinity, maxHeight: 39, alignment: .leading)
                                         }
                                         .buttonStyle(ListButtonStyle())
+                                        Divider()
                                     }
-                                    // TODO: always show an option to add more links
                                 }
                             }
                         }
@@ -355,36 +434,15 @@ struct ProfileView: View {
                             if user.job == nil {
                                 elementPrompt(for: .job)
                             }
-                            if user.emails == nil && user.phoneNumbers == nil {
+                            if userViewModel.isEditing {
                                 elementPrompt(for: .contactInfo)
-                            }
-                            if user.socialAccounts == nil {
-                                elementPrompt(for: .links)
-                            }
-                        }
-                        if !userViewModel.isShared(user) {
-                            VStack {
-                                // TODO: add settings button
-                                Button {
-                                    AuthViewModel.shared.signOut()
-                                } label: {
-                                    HStack(spacing: 7) {
-                                        FAText("arrow-right-from-bracket")
-                                        Text("Sign Out")
-                                    }
-                                    .padding(11)
-                                    .padding(.horizontal, 3)
-                                    .font(.system(size: 15.5).weight(.medium))
-                                    .foregroundStyle(.red)
-                                    .background(Material.regular)
-                                    .clipShape(Capsule())
-                                }
+                                elementPrompt(for: .socialAccounts)
                             }
                         }
                     }
                 }
                 .padding()
-                .padding(.top, 40)
+                .padding(.top, 20)
                 .frame(maxWidth: 600)
                 .frame(maxWidth: .infinity)
             }
@@ -392,63 +450,66 @@ struct ProfileView: View {
     }
     
     var bioRow: some View {
-        VStack {
+        Group {
             if let bio = user.bio {
-                ZStack(alignment: .topTrailing) {
-                    Group {
-                        if isEditingBio {
-                            TextEditor(text: $userViewModel.bio)
-                                .focused($isBioFocused)
-                                .frame(minHeight: 120)
-                                .padding(7)
-                                .overlay {
-                                    RoundedRectangle(cornerRadius: 20)
-                                        .stroke(Color.materialGray, lineWidth: 3)
-                                }
-                        } else {
-                            Text(bio)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(13)
-                                .background(Color.materialGray)
-                                .clipShape(RoundedRectangle(cornerRadius: 20))
-                                .overlay {
-                                    RoundedRectangle(cornerRadius: 20)
-                                        .stroke(Color(.lightGray).opacity(0.25), lineWidth: 1)
-                                }
+                VStack {
+                    ZStack(alignment: .topTrailing) {
+                        Group {
+                            if isEditingBio {
+                                TextEditor(text: $userViewModel.bio)
+                                    .focused($isBioFocused)
+                                    .frame(minHeight: 120)
+                                    .padding(7)
+                                    .overlay {
+                                        RoundedRectangle(cornerRadius: 20)
+                                            .stroke(Color.materialGray, lineWidth: 3)
+                                    }
+                            } else {
+                                Text(bio)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(13)
+                                    .background(Color.materialGray)
+                                    .clipShape(RoundedRectangle(cornerRadius: 20))
+                                    .overlay {
+                                        RoundedRectangle(cornerRadius: 20)
+                                            .stroke(Color(.lightGray).opacity(0.2), lineWidth: 1)
+                                    }
+                            }
+                        }
+                        .multilineTextAlignment(.leading)
+                        if !isEditingBio && userViewModel.isEditing {
+                            Button {
+                                haptic(style: .light)
+                                
+                                self.isBioFocused = true
+                                self.userViewModel.bio = user.bio ?? ""
+                                self.isEditingBio = true
+                            } label: {
+                                FAText("pen", size: 16)
+                                    .padding(9)
+                                    .foregroundStyle(Color.white)
+                                    .background(Color.blue)
+                                    .clipShape(Circle())
+                                    .offset(x: 9, y: -9)
+                            }
                         }
                     }
-                    .multilineTextAlignment(.leading)
-                    if !isEditingBio {
-                        Button {
-                            haptic(style: .light)
-                            
-                            self.isBioFocused = true
-                            self.isEditingBio = true
-                        } label: {
-                            FAText("pen", size: 16)
-                                .padding(9)
-                                .foregroundStyle(Color.white)
-                                .background(Color.blue)
-                                .clipShape(Circle())
-                                .offset(x: 9, y: -9)
+                    if isEditingBio {
+                        HStack {
+                            Button("Save") {
+                                userViewModel.updateBio()
+                                isBioFocused = false
+                                isEditingBio = false
+                            }
+                            .buttonStyle(CustomButtonStyle(style: .minimal))
+                            .frame(minWidth: 0)
+                            Button("Cancel") {
+                                isEditingBio = false
+                            }
+                            .buttonStyle(CustomButtonStyle(style: .minimalSecondary))
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                }
-                if isEditingBio {
-                    HStack {
-                        Button("Save") {
-                            userViewModel.updateBio()
-                            isBioFocused = false
-                            isEditingBio = false
-                        }
-                        .buttonStyle(CustomButtonStyle(style: .minimal))
-                        .frame(minWidth: 0)
-                        Button("Cancel") {
-                            isEditingBio = false
-                        }
-                        .buttonStyle(CustomButtonStyle(style: .minimalSecondary))
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
         }
@@ -462,6 +523,8 @@ struct ContactActionButton: View {
     }
     
     @Environment(\.openURL) var openURL
+    
+    @ObservedObject var userViewModel = UserViewModel.shared
     
     let string: String
     let type: `Type`
@@ -493,6 +556,22 @@ struct ContactActionButton: View {
                     Label("Send Email", systemImage: "envelope")
                 } else {
                     Label("Call", systemImage: "phone")
+                }
+            }
+            // Edit button?
+            if userViewModel.isEditing {
+                Button(role: .destructive) {
+                    haptic(style: .light)
+                    
+                    // TODO: add confirmation
+                    
+                    if type == .email {
+                        userViewModel.removeEmail(string)
+                    } else {
+                        userViewModel.removePhoneNumber(string)
+                    }
+                } label: {
+                    Label("Remove", systemImage: "trash")
                 }
             }
         }

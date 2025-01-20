@@ -14,6 +14,7 @@ class UserViewModel: ObservableObject {
     static let shared = UserViewModel()
     
     @Published var fetchedUser: User?
+    @Published var isEditing = false
     @Published var isLoading = false
     @Published var isLoadingAvatar = false
     @Published var showError = false
@@ -38,6 +39,13 @@ class UserViewModel: ObservableObject {
 #endif
     }
     
+    func isEmailValid(_ email: String) -> Bool {
+        let emailRegex = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"
+        let emailPredicate = NSPredicate(format: "SELF MATCHES %@", emailRegex)
+        
+        return emailPredicate.evaluate(with: email)
+    }
+    
     private func error(_ error: Error) {
         showError = true
         errorMessage = error.localizedDescription
@@ -53,7 +61,6 @@ class UserViewModel: ObservableObject {
                 guard let user = try? snapshot.data(as: User.self) else { return }
                 
                 self.fetchedUser = user
-                self.bio = user.bio ?? ""
                 self.isLoading = false
             }
     }
@@ -142,12 +149,47 @@ class UserViewModel: ObservableObject {
         }
     }
     
+    func addEmail(_ email: String) {
+        Firestore.firestore().collection("users").document(uid)
+            .updateData(["emails": FieldValue.arrayUnion([email])]) { error in
+                if let error {
+                    self.error(error)
+                }
+            }
+    }
+    
+    func removeEmail(_ email: String) {
+        Firestore.firestore().collection("users").document(uid)
+            .updateData(["emails": FieldValue.arrayRemove([email])]) { error in
+                if let error {
+                    self.error(error)
+                }
+            }
+    }
+    
+    func removePhoneNumber(_ phoneNumber: String) {
+        Firestore.firestore().collection("users").document(uid)
+            .updateData(["phoneNumbers": FieldValue.arrayRemove([phoneNumber])]) { error in
+                if let error {
+                    self.error(error)
+                }
+            }
+    }
+    
+    func removeSocialLink(_ socialAccount: String) {
+        Firestore.firestore().collection("users").document(uid)
+            .updateData(["socialAccounts": FieldValue.arrayRemove([socialAccount])]) { error in
+                if let error {
+                    self.error(error)
+                }
+            }
+    }
+    
     func updateBio() {
         Firestore.firestore().collection("users").document(uid)
             .updateData(["bio": bio.isEmpty ? FieldValue.delete() : bio]) { error in
                 if let error {
                     self.error(error)
-                    return
                 }
             }
     }

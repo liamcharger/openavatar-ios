@@ -20,7 +20,7 @@ struct AddBioView: View {
         userViewModel.bio.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
     
-    init(onboarding: Bool = true, back: @escaping() -> Void, next: @escaping() -> Void) {
+    init(onboarding: Bool = false, back: @escaping() -> Void, next: @escaping() -> Void) {
         self.onboarding = onboarding
         self.back = back
         self.next = next
@@ -28,21 +28,9 @@ struct AddBioView: View {
     
     var body: some View {
         VStack(spacing: 20) {
-            VStack(spacing: 10) {
-                FAText("file-lines", size: 32)
-                    .padding()
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 18)
-                            .stroke(.primary, lineWidth: 5)
-                    }
-                    .clipShape(RoundedRectangle(cornerRadius: 18))
-                Text("Add a bio?")
-                    .font(.system(size: 28, design: .monospaced).weight(.bold))
-            }
-            .multilineTextAlignment(.center)
+            HeaderView(title: "Add a bio?", icon: "file-lines")
             TextEditor(text: $userViewModel.bio)
                 .textFieldStyle(.plain)
-                .font(.title3)
                 .padding(12)
                 .overlay {
                     RoundedRectangle(cornerRadius: 10)
@@ -50,14 +38,8 @@ struct AddBioView: View {
                 }
                 .focused($isBioFocused)
             HStack {
-                Button {
-                    back()
-                } label: {
-                    Image(systemName: "arrow.left")
-                        .frame(minHeight: 24)
-                }
-                .buttonStyle(CustomButtonStyle(style: .secondary))
-                let saveButton = Button(onboarding ? (bioEmpty ? "I'll add one later" : "I'm done with my bio!") : "Save my bio") {
+                BackButton(back: back)
+                let saveButton = Button(onboarding ? (bioEmpty ? "I'll add one later" : "I'm done with my bio!") : "Save my bio!") {
                     next()
                 }
                 .buttonStyle(CustomButtonStyle())
@@ -72,7 +54,6 @@ struct AddBioView: View {
             .animation(.smooth, value: userViewModel.bio)
             .frame(maxWidth: .infinity)
         }
-        .padding()
         .onAppear {
             isBioFocused = true
         }

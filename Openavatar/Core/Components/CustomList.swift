@@ -18,10 +18,6 @@ struct CustomList<Content>: View where Content : View {
         VStack(spacing: 0) {
             content
         }
-        .clipShape(RoundedRectangle(cornerRadius: 20))
-        .overlay {
-            RoundedRectangle(cornerRadius: 20)
-                .stroke(Color(.lightGray).opacity(0.25), lineWidth: 1)
-        }
+        .backgroundBorder()
     }
 }

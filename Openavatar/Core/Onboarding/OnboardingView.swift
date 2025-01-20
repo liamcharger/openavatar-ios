@@ -21,6 +21,7 @@ struct OnboardingView: View {
     }
     
     @ObservedObject var authViewModel = AuthViewModel.shared
+    @ObservedObject var userViewModel = UserViewModel.shared
     
     @State private var hasCompletedInitalAnimation = false
     @State private var showPage = false
@@ -49,12 +50,6 @@ struct OnboardingView: View {
     
     private let animation = Animation.smooth(duration: 0.9)
     
-    private func isEmailValid(_ email: String) -> Bool {
-        let emailRegex = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"
-        let emailPredicate = NSPredicate(format: "SELF MATCHES %@", emailRegex)
-        
-        return emailPredicate.evaluate(with: email)
-    }
     private func wait(for interval: Double, completion: @escaping() -> Void) {
         DispatchQueue.main.asyncAfter(deadline: .now() + interval) {
             completion()
@@ -82,29 +77,6 @@ struct OnboardingView: View {
         }
         .buttonStyle(CustomButtonStyle())
         .transition(.move(edge: .trailing).combined(with: .opacity))
-    }
-    private func header(icon: String, title: LocalizedStringKey, subtitle: LocalizedStringKey? = nil, accent: Color = .primary, error: Bool = false) -> some View {
-        VStack(spacing: 10) {
-            FAText(icon, size: 32)
-                .padding()
-                .background(accent == .primary ? .clear : accent.opacity(0.1))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 18)
-                        .stroke(accent, lineWidth: 5)
-                }
-                .clipShape(RoundedRectangle(cornerRadius: 18))
-                .foregroundColor(accent)
-                .animation(.smooth(duration: 0.4), value: icon)
-            Text(title)
-                .font(.system(size: 28, design: .monospaced).weight(.bold))
-            if let subtitle {
-                Text(subtitle)
-                    .foregroundStyle(error ? Color.red : Color(.lightGray))
-                    .offset(y: !hasCompletedInitalAnimation ? (showSubtitle ? 0 : 12) : 0)
-                    .opacity(showSubtitle ? 1 : 0)
-            }
-        }
-        .multilineTextAlignment(.center)
     }
     private func animateIn(subtitle: Bool = true) {
         wait(for: 0.8) {
@@ -174,10 +146,15 @@ struct OnboardingView: View {
             case .welcome: welcomeView
             case .nickname: nicknameView
             case .name: nameView
-            case .email: emailView
+            case .email:
+                AddEmailView(email: $email, onboarding: true) {
+                    back(backTo: .name)
+                } save: {
+                    next()
+                }
             case .password: passwordView
             case .bio:
-                AddBioView {
+                AddBioView(onboarding: true) {
                     back(backTo: .password)
                 } next: {
                     next()
@@ -203,7 +180,7 @@ struct OnboardingView: View {
             Spacer()
                 .frame(maxHeight: 22)
             Spacer()
-            header(icon: "hands-clapping", title: "Welcome to Openavatar!", subtitle: "The open-source alternative to Gravatar")
+            HeaderView(title: "Welcome to Openavatar!", icon: "hands-clapping", subtitle: "The open-source alternative to Gravatar")
             Spacer()
             VStack(spacing: 10) {
                 nextButton(title: "This is my first time here")
@@ -218,11 +195,11 @@ struct OnboardingView: View {
     
     var loginView: some View {
         var canSubmit: Bool {
-            return !loginPassword.trimmingCharacters(in: .whitespaces).isEmpty && loginPassword.count >= 6 && isEmailValid(loginEmail)
+            return !loginPassword.trimmingCharacters(in: .whitespaces).isEmpty && loginPassword.count >= 6 && userViewModel.isEmailValid(loginEmail)
         }
         
         return VStack(spacing: 20) {
-            header(icon: "key", title: "Time to login!", subtitle: "\(error ?? "")", accent: {
+            HeaderView(title: "Time to login!", icon: "key", subtitle: "\(error ?? "")", accent: {
                 if showError {
                     return .red
                 }
@@ -262,7 +239,7 @@ struct OnboardingView: View {
         }
         
         return VStack(spacing: 20) {
-            header(icon: canSubmit ? "check" : "user", title: "First, pick a nickname.", accent: canSubmit ? .green : .primary)
+            HeaderView(title: "First, pick a nickname.", icon: canSubmit ? "check" : "user", accent: canSubmit ? .green : .primary)
             CustomTextField("Nickname", text: $nickname)
                 .focused($isNicknameFocused)
                 .autocapitalization(.none)
@@ -298,7 +275,7 @@ struct OnboardingView: View {
         }
         
         return VStack(spacing: 20) {
-            header(icon: canSubmit && !firstNameEmpty && !lastNameEmpty ? "check" : "user", title: "Now, enter your first and last name.", subtitle: "Your name is optional, and you can add one later", accent: canSubmit && !firstNameEmpty && !lastNameEmpty ? .green : .primary)
+            HeaderView(title: "Now, enter your first and last name.", icon: canSubmit && !firstNameEmpty && !lastNameEmpty ? "check" : "user", subtitle: "Your name is optional, and you can add one later", accent: canSubmit && !firstNameEmpty && !lastNameEmpty ? .green : .primary)
             HStack(spacing: 10) {
                 CustomTextField("First", text: $firstName)
                 CustomTextField("Last", text: $lastName)
@@ -315,26 +292,6 @@ struct OnboardingView: View {
         }
     }
     
-    var emailView: some View {
-        return VStack(spacing: 20) {
-            header(icon: isEmailValid(email) ? "check" : "envelope", title: "Time to enter your email.", subtitle: "This email won't be publicly displayed.", accent: isEmailValid(email) ? .green : .primary)
-            CustomTextField("Email", text: $email)
-                .autocapitalization(.none)
-                .focused($isEmailFocused)
-            HStack {
-                backButton(backTo: .name)
-                if isEmailValid(email) {
-                    nextButton(title: "My email is correct!")
-                }
-            }
-            .animation(.smooth, value: isEmailValid(email))
-            .frame(maxWidth: .infinity)
-        }
-        .onAppear {
-            isEmailFocused = true
-        }
-    }
-    
     var passwordView: some View {
         var canSubmit: Bool {
             return !password.isEmpty && !confirmPassword.isEmpty && password.count >= 6 && confirmPassword.count >= 6
@@ -347,7 +304,7 @@ struct OnboardingView: View {
         }
         
         return VStack(spacing: 20) {
-            header(icon: canSubmit && doPasswordsMatch ? "check" : "key", title: "Create a strong password.", subtitle: doPasswordsMatch ? "This password must be at least 6 digits long" : "The passwords do not match.", accent: {
+            HeaderView(title: "Create a strong password.", icon: canSubmit && doPasswordsMatch ? "check" : "key", subtitle: doPasswordsMatch ? "This password must be at least 6 digits long" : "The passwords do not match.", accent: {
                 if password.isEmpty && confirmPassword.isEmpty {
                     return .primary
                 } else if canSubmit && doPasswordsMatch {
@@ -379,7 +336,7 @@ struct OnboardingView: View {
         VStack(spacing: 0) {
             ScrollView {
                 VStack(spacing: 20) {
-                    header(icon: "rotate-reverse", title: "Review your information", subtitle: "Make sure your information is correct")
+                    HeaderView(title: "Review your information",icon: "rotate-reverse", subtitle: "Make sure your information is correct")
                     CustomList {
                         ForEach(ViewSelection.allCases.filter({ $0 != .review && $0 != .password && $0 != .welcome && $0 != .loading && $0 != .login }), id: \.rawValue) { index in
                             let firstName = firstName.trimmingCharacters(in: .whitespaces).capitalized

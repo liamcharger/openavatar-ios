@@ -8,7 +8,7 @@
 import SwiftUI
 
 extension String {
-    static var loading: LocalizedStringKey {
+    static var loadingText: LocalizedStringKey {
         let `case` = Int.random(in: 0...2)
         
         switch `case` {

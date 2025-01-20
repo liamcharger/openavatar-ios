@@ -10,12 +10,11 @@ import SwiftUI
 struct LoadingView: View {
     @ObservedObject var userViewModel = UserViewModel.shared
     
-    let loadingText = String.loading
-    
-    // TODO: add vibrations
+    let loadingText = String.loadingText
     
     var body: some View {
-        VStack(spacing: 20) {
+        /*
+         VStack(spacing: 20) {
             HStack(spacing: 44) {
                 FAText("rocket", size: 32).foregroundStyle(.red)
                 FAText("hourglass", size: 32).foregroundStyle(.primary.opacity(0.8))
@@ -31,6 +30,8 @@ struct LoadingView: View {
                 .scaleEffect(1.8) // We need to find a better way to scale this
                 .padding()
         }
+         */
+        ProgressView()
     }
 }
 

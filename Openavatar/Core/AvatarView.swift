@@ -26,6 +26,9 @@ struct AvatarView: View {
             }
             .frame(width: width, height: width)
     }
+    private var isLoading: Bool {
+        return userViewModel.selectedImage != nil || showAvatarPicker
+    }
     
     var body: some View {
         VStack(spacing: 14) {
@@ -56,51 +59,53 @@ struct AvatarView: View {
                             .clipped()
                             .clipShape(Circle())
                     }
-                    HStack(spacing: 8) {
-                        Button {
-                            showAvatarPicker = true
-                        } label: {
-                            HStack(spacing: 7) {
-                                if userViewModel.selectedImage == nil {
-                                    Image(systemName: "arrow.uturn.backward")
-                                    Text("Replace")
-                                } else {
-                                    ProgressView()
-                                        .scaleEffect(0.8)
-                                }
-                            }
-                            .padding(userViewModel.selectedImage == nil ? 9 : 6)
-                            .padding(.horizontal, userViewModel.selectedImage == nil ? 3 : 0)
-                            .font(.system(size: 14.5).weight(.medium))
-                            .foregroundStyle(Color(.lightGray))
-                            .background(Material.regular)
-                            .clipShape(Capsule())
-                        }
-                        if user.avatarURL != nil {
+                    if userViewModel.isEditing {
+                        HStack(spacing: 8) {
                             Button {
-                                showAvatarRemoveConfirmation = true
+                                showAvatarPicker = true
                             } label: {
-                                FAText("trash-can", size: 16)
-                                    .padding(9)
-                                    .font(.system(size: 15).weight(.medium))
-                                    .foregroundStyle(.red)
-                                    .background(Material.regular)
-                                    .clipShape(Capsule())
-                            }
-                            .confirmationDialog("Delete Avatar", isPresented: $showAvatarRemoveConfirmation) {
-                                Button("Delete", role: .destructive) {
-                                    userViewModel.removeAvatar(user)
+                                HStack(spacing: 7) {
+                                    if isLoading {
+                                        ProgressView()
+                                            .scaleEffect(0.8)
+                                    } else {
+                                        Image(systemName: "arrow.uturn.backward")
+                                        Text("Replace")
+                                    }
                                 }
-                                Button("Cancel", role: .cancel) {}
-                            } message: {
-                                Text("Are you sure you want to delete your current avatar?")
+                                .padding(isLoading ? 6 : 9)
+                                .padding(.horizontal, isLoading ? 0 : 3)
+                                .font(.system(size: 14.5).weight(.medium))
+                                .foregroundStyle(Color(.lightGray))
+                                .background(Material.regular)
+                                .clipShape(Capsule())
+                            }
+                            if user.avatarURL != nil {
+                                Button {
+                                    showAvatarRemoveConfirmation = true
+                                } label: {
+                                    FAText("trash-can", size: 16)
+                                        .padding(9)
+                                        .font(.system(size: 15).weight(.medium))
+                                        .foregroundStyle(.red)
+                                        .background(Material.regular)
+                                        .clipShape(Capsule())
+                                }
+                                .confirmationDialog("Delete Avatar", isPresented: $showAvatarRemoveConfirmation) {
+                                    Button("Delete", role: .destructive) {
+                                        userViewModel.removeAvatar(user)
+                                    }
+                                    Button("Cancel", role: .cancel) {}
+                                } message: {
+                                    Text("Are you sure you want to delete your current avatar?")
+                                }
                             }
                         }
+                        .offset(y: 12)
                     }
-                    .offset(y: 12)
                 }
                 .transition(.opacity.combined(with: .slide))
-                .animation(.smooth, value: userViewModel.selectedImage)
+                .animation(.smooth, value: isLoading)
             } else if !userViewModel.isShared(user) {
                 Button {
                     showAvatarPicker = true
