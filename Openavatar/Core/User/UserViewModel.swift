@@ -65,22 +65,6 @@ class UserViewModel: ObservableObject {
             }
     }
     
-    func saveAvatar() {
-        guard let image = selectedImage else { return }
-        
-        if let rep = image.jpegData(compressionQuality: 0.8) {
-            UserDefaults.standard.set(rep, forKey: "profileImage")
-        }
-    }
-    
-    func getAvatar() -> UIImage? {
-        if let imageData = UserDefaults.standard.object(forKey: "profileImage") as? Data,
-            let image = UIImage(data: imageData) {
-            return image
-        }
-        return nil
-    }
-    
     private func removeAvatarFromStorage(_ user: User) {
         if let avatarURL = user.avatarURL {
             Storage.storage().reference(forURL: avatarURL).delete { error in
@@ -140,7 +124,6 @@ class UserViewModel: ObservableObject {
                         print(error.localizedDescription)
                     }
                     
-                    self.saveAvatar()
                     self.selectedImage = nil
                     self.isLoadingAvatar = false
                     return

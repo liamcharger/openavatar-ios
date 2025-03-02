@@ -36,15 +36,7 @@ struct AvatarView: View {
             
             if user.avatarURL != nil || userViewModel.selectedImage != nil {
                 ZStack(alignment: .bottom) {
-                    if let avatar = userViewModel.getAvatar(), !userViewModel.isShared(user) { // FIXME: if we use a cached version, when the avatar is changed on other clients, it won't update here
-                        Image(uiImage: avatar)
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(width: size, height: size)
-                            .clipShape(Circle())
-                    } else if let avatarURL = user.avatarURL, let url = URL(
-                        string: avatarURL
-                    ) {
+                    if let avatarURL = user.avatarURL, let url = URL(string: avatarURL) {
                         KFImage(url)
                             .placeholder { _ in
                                 placeholderAvatar(width: size)
@@ -106,7 +98,7 @@ struct AvatarView: View {
                 }
                 .transition(.opacity.combined(with: .slide))
                 .animation(.smooth, value: isLoading)
-            } else if !userViewModel.isShared(user) {
+            } else {
                 Button {
                     showAvatarPicker = true
                     // TODO: add import from other platforms
@@ -114,12 +106,16 @@ struct AvatarView: View {
                     placeholderAvatar(width: size)
                         .overlay {
                             VStack(spacing: 7) {
-                                FAText("camera", size: 28)
-                                Text("Add Photo")
-                                    .font(
-                                        .system(size: 17)
-                                        .weight(.medium)
-                                    )
+                                if userViewModel.isEditing {
+                                    FAText("camera", size: 28)
+                                    Text("Add Photo")
+                                        .font(
+                                            .system(size: 17)
+                                            .weight(.medium)
+                                        )
+                                } else {
+                                    FAText("user", size: 52)
+                                }
                             }
                             .foregroundStyle(.gray.opacity(0.9))
                         }
